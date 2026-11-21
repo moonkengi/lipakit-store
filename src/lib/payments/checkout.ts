@@ -37,7 +37,7 @@ export type StartCheckoutResult = {
 /** No 0/O/1/I, so customers can read it off an SMS and type it as a Paybill account number. */
 const REF_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
-export function generateAccountRef(prefix = siteConfig.receiptPrefix): string {
+export function generateAccountRef(prefix: string = siteConfig.receiptPrefix): string {
   let body = "";
   for (let i = 0; i < 8; i++) body += REF_ALPHABET[randomInt(REF_ALPHABET.length)];
   return `${prefix}${body}`.slice(0, ACCOUNT_REFERENCE_MAX);

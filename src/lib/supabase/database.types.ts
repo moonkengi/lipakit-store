@@ -33,9 +33,11 @@ export type PlanInterval = "month" | "quarter" | "year";
 export type SubscriptionStatus = "trialing" | "active" | "grace" | "expired" | "canceled";
 export type OrderPurpose = "subscription" | "renewal" | "one_off";
 export type OrderStatus = "pending" | "paid" | "failed" | "expired" | "needs_review" | "cancelled";
-export type MpesaKind = "stk" | "c2b" | "b2c";
+export type MpesaKind = "stk" | "c2b" | "b2c" | "ratiba";
 export type MpesaTransactionStatus = "pending" | "success" | "failed" | "cancelled" | "timeout" | "unmatched";
-export type MpesaCallbackKind = "stk" | "c2b_validate" | "c2b_confirm" | "b2c_result" | "b2c_timeout";
+export type MpesaCallbackKind = "stk" | "c2b_validate" | "c2b_confirm" | "b2c_result" | "b2c_timeout" | "ratiba";
+export type RenewalMethod = "manual" | "ratiba";
+export type RatibaStatus = "requested" | "active" | "failed" | "cancelled";
 
 export type Database = {
   __InternalSupabase: { PostgrestVersion: "12" };
@@ -77,8 +79,18 @@ export type Database = {
           current_period_end: string;
           grace_until: string | null;
           cancel_at_period_end: boolean;
+          renewal_method: RenewalMethod;
+          ratiba_account_ref: string | null;
+          ratiba_status: RatibaStatus | null;
         },
-        "id" | "created_at" | "updated_at" | "grace_until" | "cancel_at_period_end",
+        | "id"
+        | "created_at"
+        | "updated_at"
+        | "grace_until"
+        | "cancel_at_period_end"
+        | "renewal_method"
+        | "ratiba_account_ref"
+        | "ratiba_status",
         [
           {
             foreignKeyName: "subscriptions_plan_id_fkey";
@@ -148,6 +160,8 @@ export type Database = {
           result_desc: string | null;
           status: MpesaTransactionStatus;
           raw: Json | null;
+          account_ref: string | null;
+          transaction_time: string | null;
         },
         | "id"
         | "created_at"
@@ -161,7 +175,9 @@ export type Database = {
         | "result_code"
         | "result_desc"
         | "status"
-        | "raw",
+        | "raw"
+        | "account_ref"
+        | "transaction_time",
         [
           {
             foreignKeyName: "mpesa_transactions_order_id_fkey";
@@ -221,9 +237,27 @@ export type Database = {
           p_receipt?: string;
           p_phone?: string;
           p_raw?: Json;
+          p_receipt_prefix?: string;
         };
         Returns: string;
       };
+      mpesa_settle_c2b: {
+        Args: {
+          p_trans_id: string;
+          p_amount: number;
+          p_account_ref: string;
+          p_phone: string;
+          p_trans_time: string;
+          p_raw: Json;
+          p_order_id?: string;
+          p_subscription_id?: string;
+          p_order_status?: string;
+          p_order_reason?: string;
+          p_receipt_prefix?: string;
+        };
+        Returns: string;
+      };
+      billing_apply_paid_order: { Args: { p_order_id: string; p_receipt_prefix?: string }; Returns: undefined };
     };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };

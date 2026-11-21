@@ -9,6 +9,7 @@
 import "server-only";
 import { ZodError } from "zod";
 import { parseStkCallback } from "@/lib/mpesa";
+import { fulfilReceipts } from "@/lib/billing/fulfil";
 import { resolveStk } from "@/lib/reconcile/stk";
 import type { Json, MpesaCallbackKind } from "@/lib/supabase/database.types";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -40,7 +41,7 @@ export async function logCallback(kind: MpesaCallbackKind, rawBody: string): Pro
   return { id: data.id, payload };
 }
 
-async function recordProcessing(callbackId: string, error: string | null) {
+export async function recordProcessing(callbackId: string, error: string | null) {
   const { error: dbError } = await createAdminClient()
     .from("mpesa_callbacks")
     .update({ processed_at: new Date().toISOString(), error })
@@ -62,6 +63,7 @@ export async function processStkCallback(callbackId: string, payload: unknown): 
     } else {
       // still_pending is not an error: STK Query hasn't caught up yet, and the poller will settle it.
       await recordProcessing(callbackId, null);
+      if (result.kind === "done" && result.settlement?.orderStatus === "paid") await fulfilReceipts({ limit: 5 });
     }
   } catch (error) {
     const message =

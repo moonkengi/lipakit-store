@@ -4,6 +4,7 @@
  * what makes it atomic and idempotent.
  */
 import "server-only";
+import { siteConfig } from "@/config/site";
 import type { Json } from "@/lib/supabase/database.types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { PendingStkTransaction, SettleOutcome, StkStore } from "@/lib/reconcile/stk";
@@ -28,7 +29,7 @@ function toPending(row: TxRow): PendingStkTransaction {
 
 const TX_COLUMNS = "checkout_request_id, order_id, amount_kes, status, created_at";
 
-export function createSupabaseStkStore(): StkStore {
+export function createSupabaseStkStore(receiptPrefix: string = siteConfig.receiptPrefix): StkStore {
   const db = createAdminClient();
 
   return {
@@ -68,6 +69,7 @@ export function createSupabaseStkStore(): StkStore {
         p_receipt: s.receipt ?? undefined,
         p_phone: s.phone ?? undefined,
         p_raw: s.raw === null || s.raw === undefined ? undefined : (s.raw as Json),
+        p_receipt_prefix: receiptPrefix,
       });
       if (error) throw new Error(`settle: ${error.message}`);
       return data as SettleOutcome;

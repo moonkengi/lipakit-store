@@ -33,10 +33,14 @@ export function getMpesaClient(): MpesaClient {
   return client;
 }
 
-export type CallbackKind = "stk" | "c2b/validate" | "c2b/confirm";
+export type CallbackKind = "stk" | "c2b/confirm" | "c2b/validate" | "ratiba";
 
-/** Full public URL Daraja should call, including the secret path token. */
+/**
+ * Full public URL Daraja should call, including the secret path token.
+ * The path is /api/hooks/... on purpose: Safaricom rejects callback URLs that
+ * contain words like "mpesa" or "safaricom" (see lib/mpesa/c2b.ts).
+ */
 export function callbackUrl(kind: CallbackKind): string {
   const env = getServerEnv();
-  return `${env.NEXT_PUBLIC_SITE_URL}/api/mpesa/callback/${env.MPESA_CALLBACK_TOKEN}/${kind}`;
+  return `${env.NEXT_PUBLIC_SITE_URL}/api/hooks/${env.MPESA_CALLBACK_TOKEN}/${kind}`;
 }
