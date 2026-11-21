@@ -7,6 +7,7 @@ import "server-only";
 import { getServerEnv } from "@/lib/env";
 import { createResendEmail } from "./email";
 import { createAfricasTalkingSms } from "./sms";
+import { pushEnabled, pushToUsers } from "./push";
 import { createTelegram } from "./telegram";
 import type { EmailMessage, EmailSender, SendResult, SmsSender, TelegramSender } from "./types";
 
@@ -40,7 +41,13 @@ export function getNotifier(): Notifier {
   return notifier;
 }
 
-export type Recipient = { phone?: string | null; email?: string | null; telegramChatId?: number | null };
+export type Recipient = {
+  phone?: string | null;
+  email?: string | null;
+  telegramChatId?: number | null;
+  /** Enables web push to the user's opted-in browsers. */
+  userId?: string | null;
+};
 export type Message = {
   sms: string;
   subject: string;
@@ -49,7 +56,7 @@ export type Message = {
   attachments?: EmailMessage["attachments"];
 };
 
-export type DeliveryReport = { sms?: SendResult; email?: SendResult; telegram?: SendResult };
+export type DeliveryReport = { sms?: SendResult; email?: SendResult; telegram?: SendResult; push?: SendResult };
 
 /** Send one message on every channel the recipient has and the app has configured. */
 export async function notifyRecipient(
@@ -76,9 +83,16 @@ export async function notifyRecipient(
   if (n.telegram && to.telegramChatId) {
     jobs.push(n.telegram.send(to.telegramChatId, message.text).then((r) => void (report.telegram = r)));
   }
+  if (to.userId && pushEnabled()) {
+    jobs.push(
+      pushToUsers([to.userId], { title: message.subject, body: message.sms }).then(
+        (n) => void (report.push = n > 0 ? { ok: true } : { ok: false, error: "no browser subscribed" }),
+      ),
+    );
+  }
   await Promise.all(jobs);
   for (const [channel, r] of Object.entries(report)) {
-    if (r && !r.ok) console.error(`[notify] ${channel} failed:`, r.error);
+    if (r && !r.ok && channel !== "push") console.error(`[notify] ${channel} failed:`, r.error);
   }
   return report;
 }
