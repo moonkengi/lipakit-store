@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { requireUser } from "@/lib/auth";
 import { getServerEnv } from "@/lib/env";
-import { mpesaConfigFromEnv } from "@/lib/payments/mpesa-client";
+import { mpesaConfigFromEnv, usingPaystack } from "@/lib/payments/mpesa-client";
 import { createClient } from "@/lib/supabase/server";
 import { formatKes } from "@/lib/utils";
 import { MpesaCheckout } from "@/components/mpesa-checkout";
@@ -58,7 +58,7 @@ async function Billing() {
 
   const openBill = orders?.find((o) => o.purpose === "renewal" && o.status === "pending" && sub);
   const mpesa = mpesaConfigFromEnv();
-  const isPaybill = mpesa.transactionType === "CustomerPayBillOnline";
+  const isPaybill = !usingPaystack() && mpesa.transactionType === "CustomerPayBillOnline";
 
   return (
     <>

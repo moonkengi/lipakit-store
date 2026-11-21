@@ -45,6 +45,8 @@ export function generateAccountRef(prefix: string = siteConfig.receiptPrefix): s
 
 export async function startStkCheckout(input: {
   userId: string;
+  /** Needed by Paystack; ignored by Daraja. */
+  email?: string | null;
   phone: string;
   amountKes: number;
   purpose: OrderPurpose;
@@ -104,6 +106,7 @@ export async function startStkCheckout(input: {
       accountReference: order.account_ref,
       description: siteConfig.name.slice(0, TRANSACTION_DESC_MAX),
       callbackUrl: callbackUrl("stk"),
+      email: input.email ?? undefined,
     });
   } catch (error) {
     const message = error instanceof MpesaError ? error.message : "We couldn't reach M-Pesa. Please try again.";

@@ -45,6 +45,8 @@ export type StkPushInput = {
   description: string;
   /** Full HTTPS URL Daraja will POST the result to. */
   callbackUrl: string;
+  /** Customer's email. Daraja ignores it; Paystack requires it. */
+  email?: string;
 };
 
 export type StkPushResult = {
@@ -61,7 +63,19 @@ export type StkPushResult = {
  * `pending` means the customer hasn't finished yet (or Daraja doesn't know yet).
  */
 export type StkQueryResult =
-  { state: "pending"; raw: unknown } | { state: "final"; resultCode: number; resultDesc: string; raw: unknown };
+  | { state: "pending"; raw: unknown }
+  | {
+      state: "final";
+      resultCode: number;
+      resultDesc: string;
+      /**
+       * Details the provider confirmed itself (Paystack's verify returns them;
+       * Daraja's STK Query doesn't). Preferred over anything a callback said.
+       */
+      amountKes?: number;
+      receipt?: string;
+      raw: unknown;
+    };
 
 export interface MpesaClient {
   readonly mode: MpesaMode;

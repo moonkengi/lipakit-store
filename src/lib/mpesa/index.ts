@@ -17,6 +17,7 @@ export { darajaTimestamp, stkPassword } from "./password";
 export { describeResultCode, type ResultCodeInfo } from "./result-codes";
 export { parseStkCallback, type ParsedStkCallback } from "./schemas";
 export { ACCOUNT_REFERENCE_MAX, TRANSACTION_DESC_MAX } from "./stk";
+export { createPaystackClient, verifyPaystackSignature, type PaystackConfig } from "./paystack";
 export {
   assertDarajaSafeUrl,
   C2B_ACCEPT,

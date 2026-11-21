@@ -131,8 +131,27 @@ export async function runHealthChecks(now = new Date()): Promise<Check[]> {
         : `${env.NEXT_PUBLIC_SITE_URL}/api/hooks/•••/…`,
   });
 
+  // Paystack secret key (PAYMENT_PROVIDER=paystack)
+  if (env.MPESA_MODE !== "simulator" && env.PAYMENT_PROVIDER === "paystack") {
+    let status: Check["status"] = "fail";
+    let detail = "";
+    try {
+      const res = await fetch("https://api.paystack.co/balance", {
+        headers: { Authorization: `Bearer ${env.PAYSTACK_SECRET_KEY}` },
+        signal: AbortSignal.timeout(10_000),
+      });
+      status = res.ok ? "ok" : "fail";
+      detail = res.ok
+        ? `Key accepted (${env.PAYSTACK_SECRET_KEY?.startsWith("sk_live_") ? "live" : "test"} mode).`
+        : `Paystack answered ${res.status}. Check PAYSTACK_SECRET_KEY.`;
+    } catch (e) {
+      detail = `Couldn't reach Paystack: ${(e as Error).message}`;
+    }
+    checks.push({ id: "paystack:auth", group: "Configuration", label: "Paystack secret key", status, detail });
+  }
+
   // Daraja credentials
-  if (env.MPESA_MODE !== "simulator") {
+  if (env.MPESA_MODE !== "simulator" && env.PAYMENT_PROVIDER === "daraja") {
     try {
       await createTokenProvider({
         baseUrl: DARAJA_BASE_URLS[env.MPESA_MODE],

@@ -52,6 +52,14 @@ export const serverSchema = publicSchema
       .refine((v) => !findBannedKeyword(v), {
         message: "MPESA_CALLBACK_TOKEN contains a word Safaricom blocks in callback URLs; generate another",
       }),
+    /**
+     * Who sends the STK push. "daraja": your own Paybill/Till through Safaricom.
+     * "paystack": Paystack's shortcode, for when you don't have one yet (no C2B, Ratiba or B2C).
+     * Ignored in simulator mode.
+     */
+    PAYMENT_PROVIDER: z.enum(["daraja", "paystack"]).default("daraja"),
+    /** Paystack secret key (sk_test_... or sk_live_...). Server only. */
+    PAYSTACK_SECRET_KEY: optional(),
     /** C2B validation: accept every payment, or reject unknown account numbers (needs validation enabled by Safaricom). */
     MPESA_C2B_VALIDATION: z.enum(["accept", "match"]).default("accept"),
     /** Offer M-Pesa Ratiba (standing orders) as auto-renew. Needs Ratiba approval from Safaricom in production. */
@@ -119,6 +127,8 @@ export const serverSchema = publicSchema
 
     // Set by Vercel automatically ("production" | "preview" | "development"). Not something you configure.
     VERCEL_ENV: optional(),
+    // Set by Netlify automatically ("production" | "deploy-preview" | "branch-deploy" | "dev").
+    CONTEXT: optional(),
   })
   .superRefine((env, ctx) => {
     if (env.VAPID_PRIVATE_KEY && !env.VAPID_SUBJECT) {
@@ -129,15 +139,32 @@ export const serverSchema = publicSchema
       });
     }
     // The simulator fakes payments; it must never run on a live production deployment.
-    if (env.MPESA_MODE === "simulator" && env.VERCEL_ENV === "production") {
+    if (env.MPESA_MODE === "simulator" && (env.VERCEL_ENV === "production" || env.CONTEXT === "production")) {
       ctx.addIssue({
         code: "custom",
         path: ["MPESA_MODE"],
         message: "MPESA_MODE=simulator is not allowed on a production deployment",
       });
     }
+    // Paystack needs its secret key, and can't do Ratiba.
+    if (env.MPESA_MODE !== "simulator" && env.PAYMENT_PROVIDER === "paystack") {
+      if (!env.PAYSTACK_SECRET_KEY) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["PAYSTACK_SECRET_KEY"],
+          message: "PAYSTACK_SECRET_KEY is required when PAYMENT_PROVIDER=paystack",
+        });
+      }
+      if (env.MPESA_RATIBA_ENABLED) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["MPESA_RATIBA_ENABLED"],
+          message: "Ratiba needs your own Daraja shortcode; turn it off with PAYMENT_PROVIDER=paystack",
+        });
+      }
+    }
     // Real Daraja modes need real credentials. The simulator needs none.
-    if (env.MPESA_MODE !== "simulator") {
+    if (env.MPESA_MODE !== "simulator" && env.PAYMENT_PROVIDER === "daraja") {
       for (const key of ["MPESA_CONSUMER_KEY", "MPESA_CONSUMER_SECRET", "MPESA_SHORTCODE", "MPESA_PASSKEY"] as const) {
         if (!env[key]) {
           ctx.addIssue({

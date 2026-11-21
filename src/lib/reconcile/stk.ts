@@ -149,11 +149,21 @@ export async function resolveStk(
   const query = await deps.mpesa.stkQuery(checkoutRequestId);
   if (query.state === "pending") return { kind: "still_pending" };
 
+  // Details the provider verified itself beat anything the (unsigned) callback claimed.
+  const verified: CallbackHint | undefined =
+    query.amountKes !== undefined || query.receipt
+      ? {
+          resultCode: query.resultCode,
+          amountKes: query.amountKes ?? hint?.amountKes,
+          receipt: query.receipt ?? hint?.receipt,
+          phone: hint?.phone,
+        }
+      : hint;
   const settlement = decideSettlement({
     tx,
     resultCode: query.resultCode,
     resultDesc: query.resultDesc,
-    hint,
+    hint: verified,
     raw: { query: query.raw, callback: hint ?? null },
   });
   const outcome = await deps.store.settle(settlement);

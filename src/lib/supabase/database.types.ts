@@ -35,7 +35,8 @@ export type OrderPurpose = "subscription" | "renewal" | "one_off";
 export type OrderStatus = "pending" | "paid" | "failed" | "expired" | "needs_review" | "cancelled";
 export type MpesaKind = "stk" | "c2b" | "b2c" | "ratiba";
 export type MpesaTransactionStatus = "pending" | "success" | "failed" | "cancelled" | "timeout" | "unmatched";
-export type MpesaCallbackKind = "stk" | "c2b_validate" | "c2b_confirm" | "b2c_result" | "b2c_timeout" | "ratiba";
+export type MpesaCallbackKind =
+  "stk" | "c2b_validate" | "c2b_confirm" | "b2c_result" | "b2c_timeout" | "ratiba" | "paystack";
 export type RenewalMethod = "manual" | "ratiba";
 export type PayoutStatus = "pending" | "success" | "failed" | "timeout";
 export type PayoutCommand = "BusinessPayment" | "SalaryPayment" | "PromotionPayment";

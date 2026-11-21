@@ -28,6 +28,28 @@ describe("parseServerEnv", () => {
     expect(env.AT_USERNAME).toBeUndefined();
   });
 
+  it("with Paystack, needs its secret key instead of Daraja credentials", () => {
+    const paystack = { ...base, MPESA_MODE: "production", PAYMENT_PROVIDER: "paystack" };
+    expect(() => parseServerEnv(paystack)).toThrow(/PAYSTACK_SECRET_KEY is required/);
+    expect(parseServerEnv({ ...paystack, PAYSTACK_SECRET_KEY: "sk_live_x" }).PAYMENT_PROVIDER).toBe("paystack");
+  });
+
+  it("refuses Ratiba with Paystack", () => {
+    expect(() =>
+      parseServerEnv({
+        ...base,
+        MPESA_MODE: "production",
+        PAYMENT_PROVIDER: "paystack",
+        PAYSTACK_SECRET_KEY: "sk_live_x",
+        MPESA_RATIBA_ENABLED: "true",
+      }),
+    ).toThrow(/Ratiba needs your own Daraja shortcode/);
+  });
+
+  it("refuses the simulator on a Netlify production deploy", () => {
+    expect(() => parseServerEnv({ ...base, CONTEXT: "production" })).toThrow(/simulator is not allowed/);
+  });
+
   it("requires Daraja credentials outside simulator mode", () => {
     expect(() => parseServerEnv({ ...base, MPESA_MODE: "sandbox" })).toThrow(/MPESA_CONSUMER_KEY is required/);
     expect(() =>

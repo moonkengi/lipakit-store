@@ -52,6 +52,32 @@ export async function recordProcessing(callbackId: string, error: string | null)
 }
 
 /** Process one logged STK callback. Never throws: problems are written to the log row. */
+/**
+ * Paystack webhook (PAYMENT_PROVIDER=paystack). Only the reference is used:
+ * resolveStk re-verifies with Paystack, exactly as a Daraja callback is
+ * re-checked with STK Query. Events other than charges are logged and ignored.
+ */
+export async function processPaystackEvent(callbackId: string, payload: unknown): Promise<void> {
+  const event = (payload ?? {}) as { event?: unknown; data?: { reference?: unknown } };
+  const reference = typeof event.data?.reference === "string" ? event.data.reference : null;
+  if (typeof event.event !== "string" || !event.event.startsWith("charge.") || !reference) {
+    await recordProcessing(callbackId, null);
+    return;
+  }
+  try {
+    const result = await resolveStk({ store: createSupabaseStkStore(), mpesa: getMpesaClient() }, reference);
+    await recordProcessing(callbackId, result.kind === "unknown_checkout" ? `Unknown reference ${reference}` : null);
+    if (result.kind === "done" && result.outcome === "settled" && result.settlement) {
+      await alertStkSettled(reference, result.settlement.orderStatus);
+      if (result.settlement.orderStatus === "paid") await fulfilReceipts({ limit: 5 });
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[paystack] processing failed", callbackId, message);
+    await recordProcessing(callbackId, message);
+  }
+}
+
 export async function processStkCallback(callbackId: string, payload: unknown): Promise<void> {
   try {
     const cb = parseStkCallback(payload);

@@ -46,6 +46,7 @@ export async function POST(request: Request) {
   try {
     const result = await startStkCheckout({
       userId: user.id,
+      email: user.email,
       phone: parsed.data.phone,
       amountKes: plan.price_kes,
       purpose: live ? "renewal" : "subscription",

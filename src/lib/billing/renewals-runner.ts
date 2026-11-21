@@ -15,7 +15,7 @@ import {
   type PayInstructions,
 } from "@/lib/notify/messages";
 import { generateAccountRef } from "@/lib/payments/checkout";
-import { mpesaConfigFromEnv } from "@/lib/payments/mpesa-client";
+import { mpesaConfigFromEnv, usingPaystack } from "@/lib/payments/mpesa-client";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { LIVE_STATUSES } from "./entitlements";
 import { planRenewals, type RenewalAction, type RenewalSub } from "./renewals";
@@ -83,7 +83,11 @@ export async function runRenewals(now = new Date()): Promise<RenewalRunSummary> 
   const mpesa = mpesaConfigFromEnv();
   const pay = (accountRef: string): PayInstructions => ({
     link: billingLink,
-    paybill: mpesa.transactionType === "CustomerPayBillOnline" ? { shortcode: mpesa.partyB, accountRef } : undefined,
+    // No Paybill to offer when Paystack sends the prompts (its shortcode isn't yours).
+    paybill:
+      !usingPaystack() && mpesa.transactionType === "CustomerPayBillOnline"
+        ? { shortcode: mpesa.partyB, accountRef }
+        : undefined,
   });
 
   for (const action of plan) {

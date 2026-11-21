@@ -7,12 +7,13 @@ import "server-only";
 import type { MpesaCallbackKind } from "@/lib/supabase/database.types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { processC2BConfirmation } from "./c2b";
-import { processStkCallback } from "./callbacks";
+import { processPaystackEvent, processStkCallback } from "./callbacks";
 import { processB2CResult, processB2CTimeout } from "./payouts";
 import { processRatibaCallback } from "./ratiba";
 
 const processors: Partial<Record<MpesaCallbackKind, (id: string, payload: unknown) => Promise<void>>> = {
   stk: processStkCallback,
+  paystack: processPaystackEvent,
   c2b_confirm: processC2BConfirmation,
   ratiba: processRatibaCallback,
   b2c_result: processB2CResult,
