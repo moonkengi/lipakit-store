@@ -111,11 +111,13 @@ export async function runHealthChecks(now = new Date()): Promise<Check[]> {
     id: "config:mode",
     group: "Configuration",
     label: "M-Pesa mode",
-    status: env.MPESA_MODE === "simulator" && env.VERCEL_ENV ? "warn" : "info",
+    status: env.MPESA_MODE === "simulator" && (env.VERCEL_ENV || env.CONTEXT) ? "warn" : "info",
     detail:
       env.MPESA_MODE === "simulator"
         ? "Simulator: no real payments. Switch to sandbox or production before launch."
-        : `${env.MPESA_MODE}, shortcode ${env.MPESA_SHORTCODE ?? "?"} (${env.MPESA_TILL_OR_PAYBILL}).`,
+        : env.PAYMENT_PROVIDER === "paystack"
+          ? `Paystack (${env.PAYSTACK_SECRET_KEY?.startsWith("sk_live_") ? "live" : "test"} key). No Paybill, Ratiba or payouts until you switch to your own shortcode.`
+          : `${env.MPESA_MODE}, shortcode ${env.MPESA_SHORTCODE ?? "?"} (${env.MPESA_TILL_OR_PAYBILL}).`,
   });
   const cbUrl = callbackUrl("stk");
   const banned = findBannedKeyword(cbUrl);
