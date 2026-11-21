@@ -56,7 +56,7 @@ Same as v1, plus:
 /src/lib/payments          env wiring, Supabase settlement store, checkout, callback processing
 /src/lib/mpesa/ratiba.ts   standing orders (M3)
 /src/lib/license           licence-key check used by the update channel (M5)
-/src/app/api/mpesa/callback/[token]/ratiba
+/src/app/api/hooks/[token]/ratiba   (all Daraja callbacks live under /api/hooks: Safaricom rejects URLs containing "mpesa")
 /scripts/doctor.ts         `pnpm doctor`: checks env, URLs, Daraja reachability, cron, webhook setup
 LICENSE.md                 commercial licence (draft in repo; Kent finalises with a lawyer)
 ```

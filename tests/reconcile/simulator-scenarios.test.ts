@@ -65,7 +65,7 @@ function harness() {
       amountKes,
       accountReference: "LKTEST2345",
       description: "Test",
-      callbackUrl: "http://localhost:3000/api/mpesa/callback/tok/stk",
+      callbackUrl: "http://localhost:3000/api/hooks/tok/stk",
     });
     const { orderId } = mem.addPending({
       checkoutRequestId: push.checkoutRequestId,

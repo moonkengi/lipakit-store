@@ -81,3 +81,39 @@ A running log of choices made while building the kit, newest last. Each entry sa
 _Not yet run against a real Supabase project_ (no pg_cron in the build sandbox): the SQL follows Supabase's documented `cron.schedule` + `net.http_*` + Vault pattern. Confirm on first setup that `select * from cron.job_run_details order by start_time desc limit 5;` shows successful runs.
 
 **Known exposure:** while a request is queued, pg_net keeps its headers (including `CRON_SECRET`) in `net.http_request_queue`, readable by database roles that can log in. `CRON_SECRET` only allows triggering the cron routes, so the exposure is limited.
+
+## M3: Billing, C2B, receipts, Ratiba (2026-11-21)
+
+**All Daraja callbacks moved to `/api/hooks/<token>/...`.** Safaricom's docs say to avoid "M-PESA", "Safaricom", "exe", "exec", "cmd", "SQL" and "query" in callback URLs, and C2B registration rejects them. M2's `/api/mpesa/callback/...` would have failed C2B registration. `MPESA_CALLBACK_TOKEN` is now also checked for those words and must be URL-safe. `assertDarajaSafeUrl()` runs before every registration, so a domain containing a blocked word fails with a clear message.
+
+**Money turns into access in exactly one place: `billing_apply_paid_order()`.** Every settle path (STK, C2B, Ratiba) calls it inside the same transaction that marks the order paid, so "paid" always means "receipt exists and subscription updated".
+
+- Paid renewals extend from the **old period end**: paying early never loses days, and paying during grace doesn't gift the grace days.
+- An expired subscription gets a fresh one starting now.
+- **Plan changes take effect when the renewal order for the new plan is paid** (including the features). That's simpler than storing a pending plan change.
+
+**Renewal bills:** the daily job creates one pending renewal order per subscription, 3 days before the end. Its `account_ref` doubles as the Paybill account number in the reminder. STK payments from the billing page create their own orders, as in M2. When any renewal is paid, other open bills for that subscription are cancelled as superseded, except ones with an STK push still in flight. If a customer pays twice (STK and Paybill), both payments are applied (two periods); an admin can refund.
+
+**Trials:** one per account (only for users who have never had a subscription). No grace period: an unpaid trial expires at its end. Trial users get the same 3-day reminder.
+
+**STK and C2B for the same payment.** A Paybill with C2B URLs registered also receives a C2B confirmation for STK payments, with `TransID` equal to the STK receipt. Whichever arrives first settles the order. The other is a no-op, because receipts are unique and the order only moves from an unpaid status. Covered by `tests/sql/billing.sql`.
+
+**C2B matching order:** account number, then Ratiba reference, then phone + exact amount (only when exactly one unpaid order in the last 48 hours fits, and only when Daraja sends the phone unmasked), else the unmatched queue. A wrong amount goes to `needs_review`. Paying an already-paid order goes to the unmatched queue as a possible double payment. We register C2B with **v1** of the URL API because v2 masks the payer's phone. _Confirm with Safaricom_ which version your shortcode supports.
+
+**C2B confirmations aren't re-verified.** Unlike STK, there's no query to call without the Transaction Status API, which needs initiator credentials. Protection is the secret token, unique `TransID`, optional IP allowlisting, and the amount check. Adding Transaction Status verification is an M4 option.
+
+**C2B validation** accepts everything by default (`MPESA_C2B_VALIDATION=accept`). `match` rejects unknown account numbers. Validation only runs if Safaricom enabled it on the shortcode, and logging never delays the answer.
+
+**Ratiba assumption (confirm with Safaricom):** Daraja's docs describe the approval callback but not how each recurring payment arrives. We assume each one reaches the Paybill/Till as a C2B confirmation whose `BillRefNumber` is the standing order's `AccountReference`, and match on that. If the assumption is wrong, nothing breaks: the period ends unpaid, the subscription falls back to manual renewal with a bill and a message, and grace applies. Daraja documents no cancel API, so turning auto-renew off tells the user to remove the standing order with *334#.
+
+**Receipts:**
+
+- **Numbers** (`PREFIX-YEAR-000123`) come from a Postgres sequence inside the settle transaction. A re-run checks first so it never burns a number.
+- **PDFs** are built with `pdf-lib` (pure JS) and stored in a private `receipts` bucket in the buyer's Supabase. They're served only through 60-second signed URLs after an RLS check.
+- **Delivery:** PDF, email and SMS each record their own timestamp, so fulfilment is safe to retry. Callbacks run it straight away and the every-minute poller sweeps up failures for 7 days.
+
+**Notifications are optional per channel.** With no keys set, sending is skipped (logged once at startup), never an error. A receipt is marked sent when the customer has no email or phone on file, so it isn't retried forever.
+
+**`hasAccess()` is not used in `src/proxy.ts`.** Next.js advises against data fetching there; gate pages and routes instead (see the Reports card on the dashboard).
+
+**Daily renewals job** is added to `lipakit_schedule_jobs()` at 03:00 UTC (06:00 Nairobi). Re-run that SQL after applying this migration if you scheduled jobs before.

@@ -2,7 +2,7 @@
 
 A Next.js + Supabase starter kit for M-Pesa-powered SaaS. Daraja done right.
 
-> **Status:** Milestone 2 (M-Pesa core). Billing, admin tools and the full docs arrive in later milestones.
+> **Status:** Milestone 3 (billing, C2B, receipts). The full admin panel and docs arrive in later milestones.
 
 ## What's inside (so far)
 
@@ -13,6 +13,9 @@ A Next.js + Supabase starter kit for M-Pesa-powered SaaS. Daraja done right.
 - Zod-validated environment variables (`src/lib/env.ts`)
 - M-Pesa STK push checkout with live status, callbacks that are logged first and verified with STK Query, idempotent settlement, and a status poller
 - A local Daraja simulator for every outcome, including the failures Safaricom's sandbox can't produce
+- Subscriptions with free trials, renewal reminders, grace and expiry; optional auto-renew with M-Pesa Ratiba standing orders
+- Paybill/Till (C2B) payments matched to orders, with an unmatched queue
+- PDF receipts, plus SMS (Africa's Talking) and email (Resend) notifications on your own accounts
 
 ## Quick start
 
@@ -52,6 +55,10 @@ With `MPESA_MODE=simulator` (the default) you need no Safaricom account.
 1. Open http://localhost:3000/dev/simulator and pick an outcome: success, cancelled, timeout, insufficient funds, wrong PIN, duplicate callback, amount mismatch, missing callback, or late callback.
 2. Go to `/pricing`, choose a plan, and pay with any Kenyan-format number (e.g. `0712345678`).
 3. Watch the checkout update by itself. "Missing callback" and "late callback" take just over a minute: that's the status poller doing its job.
+4. Try the rest of billing from `/dev/simulator`:
+   - **Paybill payment:** send a C2B payment with an order's account number (it matches) or any other text (it lands in the unmatched queue).
+   - **Renewals:** "Run renewals job now" sends reminders, moves overdue plans to grace, and expires them.
+   - **Ratiba:** set `MPESA_RATIBA_ENABLED=true`, turn on automatic renewal on `/dashboard/billing`, then "Run payment" on the standing order.
 
 ## Scripts
 

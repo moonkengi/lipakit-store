@@ -10,6 +10,8 @@ function fakeMpesa(answer: StkQueryResult | (() => StkQueryResult | Promise<StkQ
   return {
     mode: "simulator",
     stkPush: vi.fn(),
+    registerC2BUrls: vi.fn(),
+    createStandingOrder: vi.fn(),
     stkQuery: vi.fn(async () => (typeof answer === "function" ? answer() : answer)),
   };
 }

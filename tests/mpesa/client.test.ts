@@ -19,7 +19,7 @@ const pushInput = {
   amountKes: 1500,
   accountReference: "LKABCD2345",
   description: "LipaKit",
-  callbackUrl: "https://app.example.co.ke/api/mpesa/callback/tok/stk",
+  callbackUrl: "https://app.example.co.ke/api/hooks/tok/stk",
 };
 
 const json = (status: number, body: unknown) =>
