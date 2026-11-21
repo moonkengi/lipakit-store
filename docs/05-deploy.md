@@ -1,6 +1,18 @@
-# 05 · Deploy (Vercel + Supabase)
+# 05 · Deploy
 
-About 30 minutes, most of it waiting for DNS. Everything runs on your own accounts, and Vercel's free Hobby plan is enough.
+About 30 minutes, most of it waiting for DNS. Everything runs on your own accounts.
+
+## Choosing a host
+
+The kit is a standard Next.js app, and the scheduled jobs run in Supabase, so it doesn't depend on any one host. Check each host's current terms; at the time of writing:
+
+| Host               | Free plan allows a paid product?                                                                           | Notes                                                                                                                       |
+| ------------------ | ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| **Vercel**         | **No.** Hobby is for non-commercial, personal use; anything that takes payments needs Pro (from $20/month) | Made by the Next.js team; every feature works first                                                                         |
+| **Netlify**        | **Yes**, within the free plan's monthly credits (sites pause if you run out)                               | Supports Next.js 16. Paid plans from $9/month                                                                               |
+| Cloudflare Workers | Yes                                                                                                        | Runs Next.js through an adapter that doesn't yet support Node.js middleware (`src/proxy.ts`), so the kit isn't tested there |
+
+A good path: **Netlify's free plan** while you validate, **Vercel Pro or a paid Netlify plan** once revenue covers it. The steps below use Vercel; Netlify is the same idea (import the repo, add the env vars, add your domain).
 
 ## 1. Supabase (production project)
 
@@ -9,12 +21,12 @@ Use a **separate** Supabase project for production. Run `supabase/setup.sql` in 
 - Site URL: `https://your-domain.co.ke`
 - Redirect URLs: `https://your-domain.co.ke/auth/callback`
 
-## 2. Vercel
+## 2. Host (Vercel shown; Netlify is the same)
 
 1. Push the code to a **private** Git repository and import it in Vercel. The defaults (Next.js, `pnpm build`) are right.
 2. Add every variable from your `.env.local` under **Settings → Environment Variables**, with production values:
    - `NEXT_PUBLIC_SITE_URL=https://your-domain.co.ke` (no trailing slash)
-   - `MPESA_MODE=sandbox` or `production`. The app refuses to start a production deployment in simulator mode.
+   - `MPESA_MODE=sandbox` or `production`. The app refuses to start a production deployment (Vercel or Netlify) in simulator mode.
    - New random values for `MPESA_CALLBACK_TOKEN` and `CRON_SECRET` (don't reuse development ones).
 3. Deploy, add your domain under **Settings → Domains**, and wait for HTTPS.
 
@@ -27,7 +39,7 @@ Two jobs run on a schedule:
 - **Status poller**, every minute: catches payments whose callback never arrived, and sends pending receipts.
 - **Renewals**, daily at 06:00 Nairobi time: reminders, grace, expiry.
 
-They run in **your Supabase project** with its built-in scheduler (pg_cron), which works on every Supabase plan. (Vercel Cron isn't used by default because on the Hobby plan a cron that runs more than once a day fails the deployment.) In the production project's SQL editor:
+They run in **your Supabase project** with its built-in scheduler (pg_cron), which works on every Supabase plan and with any host. In the production project's SQL editor:
 
 ```sql
 select public.lipakit_schedule_jobs('https://your-domain.co.ke', 'your-production-CRON_SECRET');
@@ -45,7 +57,7 @@ select jobname, status, start_time from cron.job_run_details order by start_time
 
 ## 4. M-Pesa
 
-Follow [03 · Going live](03-mpesa-go-live.md): production credentials, then **Register C2B URLs** from `/admin/integrations` once your domain is final.
+Follow [03 · Going live](03-mpesa-go-live.md): production credentials, then **Register C2B URLs** from `/admin/integrations` once your domain is final. No shortcode yet? Use Paystack ([11](11-paystack.md)).
 
 ## 5. Telegram (optional)
 

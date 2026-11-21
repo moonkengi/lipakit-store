@@ -14,6 +14,7 @@ Read them in order the first time; after that, jump to what you need.
 | 08  | [Failure modes](08-failure-modes.md)          | What goes wrong with M-Pesa in real life and how the kit handles it |
 | 09  | [Ratiba](09-ratiba.md)                        | Automatic renewal with M-Pesa standing orders                       |
 | 10  | [Support](10-support.md)                      | Getting help, and what to include                                   |
+| 11  | [Paystack](11-paystack.md)                    | Taking real M-Pesa payments before you have your own shortcode      |
 
 Also: [DECISIONS.md](DECISIONS.md) explains why things are built the way they are, and [UPGRADING.md](../UPGRADING.md) lists what to do when you take a new version.
 

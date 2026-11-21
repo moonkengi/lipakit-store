@@ -56,16 +56,16 @@ You need Node 20+, pnpm and a free Supabase project. No Safaricom account: you s
 
 ## What's inside
 
-- **M-Pesa:** STK push confirmed by STK Query, race-safe settlement, status poller, C2B Paybill/Till matching with unmatched and review queues, Ratiba auto-renewal, B2C payouts, callback log with replay, and a simulator for every outcome.
+- **M-Pesa:** your own Paybill/Till through Daraja, or Paystack until you have one. STK push confirmed by STK Query, race-safe settlement, status poller, C2B Paybill/Till matching with unmatched and review queues, Ratiba auto-renewal, B2C payouts, callback log with replay, and a simulator for every outcome.
 - **Billing:** plans, trials, reminders, grace, expiry, cancel at period end, feature gating with `hasAccess()`, numbered PDF receipts.
 - **Admin:** revenue, orders, users, unmatched payments, review queue, callbacks, payouts, integrations, health checks.
 - **Notifications:** SMS (Africa's Talking), email (Resend), Telegram and web push for customers; Telegram, Slack, Discord, a signed webhook and web push for admin alerts.
 - **Auth:** email magic link, Google, and phone SMS codes.
-- **Stack:** Next.js 16 (App Router), TypeScript strict, Tailwind v4, shadcn/ui, Supabase (Postgres, Auth, Storage, pg_cron). Everything runs on your own accounts; Vercel Hobby and Supabase Free are enough to launch.
+- **Stack:** Next.js 16 (App Router), TypeScript strict, Tailwind v4, shadcn/ui, Supabase (Postgres, Auth, Storage, pg_cron). Everything runs on your own accounts: Supabase Free plus a host that allows paid products (Netlify's free plan does; Vercel's free Hobby plan doesn't). See [05 · Deploy](docs/05-deploy.md).
 
 ## Docs
 
-Start at [docs/README.md](docs/README.md): setup, sandbox, going live, billing, deploy, troubleshooting, customising, failure modes, Ratiba and support.
+Start at [docs/README.md](docs/README.md): setup, sandbox, going live, billing, deploy, troubleshooting, customising, failure modes, Ratiba, support and Paystack.
 
 ## Scripts
 

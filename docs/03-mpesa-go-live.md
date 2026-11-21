@@ -26,7 +26,7 @@ For a SaaS, a **Paybill** is the better fit: customers can pay from the M-Pesa m
 - The managing Safaricom line registered to someone other than the owner.
 - Missing or expired documents.
 
-**No shortcode yet?** Develop with the simulator and the sandbox; nothing in the kit needs a real shortcode until launch.
+**No shortcode yet?** Develop with the simulator and the sandbox. To take real payments before your shortcode arrives, run them through Paystack ([11](11-paystack.md)) and switch over later.
 
 ## Step 2: Get a business administrator
 

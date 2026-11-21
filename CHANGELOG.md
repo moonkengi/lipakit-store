@@ -32,9 +32,13 @@ First release.
 - Email magic link, Google, and phone SMS codes (Africa's Talking via Supabase's Send SMS hook).
 - Customer messages by SMS, email, Telegram and web push.
 
+**Paystack**
+
+- `PAYMENT_PROVIDER=paystack`: real M-Pesa payments through Paystack before you have your own shortcode. Signed webhook, verify-before-settle, verified amount checks. Switch to Daraja with two env vars.
+
 **Setup**
 
 - `supabase/setup.sql` one-paste database setup, `pnpm demo:data`, `pnpm run doctor`.
 - Background jobs on Supabase pg_cron (works on Vercel Hobby).
 
-**Database:** migrations `0001`–`0006`.
+**Database:** migrations `0001`–`0007`.

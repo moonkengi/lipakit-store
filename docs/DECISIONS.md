@@ -72,7 +72,7 @@ A running log of choices made while building the kit, newest last. Each entry sa
 
 **Principle: the kit runs entirely on your own accounts** (their Vercel, Supabase, Daraja app, Africa's Talking, Resend, Telegram bot). Nothing in the kit calls a third-party server you didn't configure, and your customers' payment data never leaves your own infrastructure.
 
-**Scheduled jobs run in the buyer's Supabase (pg_cron + pg_net), not Vercel Cron.** On Vercel Hobby, any cron that runs more than once a day fails the deployment, so M2's per-minute `vercel.json` would have broken every free-plan buyer's deploy; it has been removed. pg_cron is available on every Supabase plan. `public.lipakit_schedule_jobs(app_url, cron_secret)` stores the URL and secret in Supabase Vault and schedules the jobs; `public.lipakit_unschedule_jobs()` removes them. Both are callable only by the database owner (SQL editor), never through the API. Vercel Pro users can still use Vercel Cron, and any other scheduler can call `/api/cron/*` with the bearer secret.
+**Scheduled jobs run in the buyer's Supabase (pg_cron + pg_net), not Vercel Cron.** On Vercel Hobby, any cron that runs more than once a day fails the deployment, so M2's per-minute `vercel.json` was removed. It also keeps the kit host-agnostic (Vercel's Hobby plan doesn't allow commercial use, so many buyers will host elsewhere). pg_cron is available on every Supabase plan. `public.lipakit_schedule_jobs(app_url, cron_secret)` stores the URL and secret in Supabase Vault and schedules the jobs; `public.lipakit_unschedule_jobs()` removes them. Both are callable only by the database owner (SQL editor), never through the API. Vercel Pro users can still use Vercel Cron, and any other scheduler can call `/api/cron/*` with the bearer secret.
 
 _Not yet run against a real Supabase project_ (no pg_cron in the build sandbox): the SQL follows Supabase's documented `cron.schedule` + `net.http_*` + Vault pattern. Confirm on first setup that `select * from cron.job_run_details order by start_time desc limit 5;` shows successful runs.
 
@@ -150,3 +150,13 @@ _Not yet run against a real Supabase project_ (no pg_cron in the build sandbox):
 **Sidebar active link streams in.** `usePathname()` can't be part of a pre-rendered shell for dynamic routes like `/admin/orders/[id]`, so the nav renders plain links first and the highlighted version replaces it.
 
 **`web-push` v4 is ES-module-only:** import its named exports (`sendNotification`, `setVapidDetails`), not a default.
+
+## Paystack as a second provider
+
+**Paystack implements the existing `MpesaClient` interface rather than a new payment layer.** `stkPush` maps to Paystack's charge API with `mobile_money.provider = "mpesa"`, and `stkQuery` to Verify Transaction, so checkout, settlement, the poller, receipts and the UI are untouched. C2B, Ratiba and B2C throw a clear "needs your own shortcode" error. Selected with `PAYMENT_PROVIDER`; the simulator still wins when `MPESA_MODE=simulator`.
+
+**Verified details beat callback details.** `StkQueryResult` can now carry the amount and receipt the provider confirmed. Paystack's verify returns them, so a short payment is caught even if no webhook ever arrives. Daraja's STK Query doesn't, so Daraja behaves exactly as before.
+
+**The Paystack webhook is signed but still only a hint.** The HMAC-SHA512 signature is checked before logging (unsigned requests get a 401 and aren't stored), then the reference is resolved through the same verify-then-settle path as a Daraja callback.
+
+**No Paybill instructions with Paystack.** Paystack's shortcode isn't the merchant's, so renewal messages and the billing page only offer the pay link.
