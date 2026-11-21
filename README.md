@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LipaKit
 
-## Getting Started
+A Next.js + Supabase starter kit for M-Pesa-powered SaaS. Daraja done right.
 
-First, run the development server:
+> **Status:** Milestone 1 (foundation). M-Pesa, billing, admin tools and the full docs arrive in later milestones.
+
+## What's inside (so far)
+
+- Next.js 16 (App Router, Cache Components), TypeScript strict, Tailwind CSS v4, shadcn/ui
+- Supabase Postgres schema for plans, subscriptions, orders, M-Pesa transactions, callback log and receipts, with Row Level Security
+- Sign-in with email magic link and Google (Supabase Auth)
+- Marketing pages, pricing from the database, user dashboard and role-gated admin shell
+- Zod-validated environment variables (`src/lib/env.ts`)
+
+## Quick start
+
+You need Node 20+, pnpm, and a Supabase project (the free tier is fine).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+cp .env.example .env.local        # fill in the Supabase values
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. **Database.** In the Supabase SQL editor, run the files in `supabase/migrations/` in order, then `supabase/seed.sql`. Or with the Supabase CLI: `supabase link --project-ref <ref>` then `supabase db push`.
+2. **Auth redirect.** Supabase → Authentication → URL Configuration: set Site URL to `http://localhost:3000` and add `http://localhost:3000/auth/callback` to Redirect URLs.
+3. **Run it.**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+   ```bash
+   pnpm dev
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+   Open http://localhost:3000, sign in with your email, and you land on an empty dashboard.
 
-## Learn More
+4. **Make yourself an admin.** Run the `update public.profiles ...` line at the bottom of `supabase/seed.sql` with your email, then visit `/admin`.
 
-To learn more about Next.js, take a look at the following resources:
+Google sign-in also needs the Google provider turned on in Supabase → Authentication → Providers.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Command          | What it does                                                     |
+| ---------------- | ---------------------------------------------------------------- |
+| `pnpm dev`       | Run locally                                                      |
+| `pnpm build`     | Production build                                                 |
+| `pnpm test`      | Unit tests (Vitest)                                              |
+| `pnpm lint`      | ESLint                                                           |
+| `pnpm typecheck` | TypeScript, including generated route types                      |
+| `pnpm db:types`  | Regenerate `database.types.ts` from your linked Supabase project |
 
-## Deploy on Vercel
+## Renaming
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Change `name` in `src/config/site.ts`. See `docs/DECISIONS.md` for why things are built the way they are.
