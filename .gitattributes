@@ -1,0 +1,5 @@
+# Left out of buyer copies (git archive), see scripts/release/issue.mjs.
+scripts/release/** export-ignore
+docs/BRIEF.md export-ignore
+docs/SELLING.md export-ignore
+.gitattributes export-ignore

@@ -1,47 +1,56 @@
-# LipaKit Commercial Licence (DRAFT)
+# LipaKit Commercial Licence
 
-> **Draft, not legal advice.** This is a starting point for Kent to finalise with a Kenyan lawyer before any sale. It is not yet in force.
+> **DRAFT: not yet reviewed by a lawyer and not in force.** The seller removes this notice after legal review; the delivery script won't package copies while it's here.
 
-Licence ID: `{{LICENSE_ID}}` · Licensee: `{{LICENSEE}}` · Tier: `{{TIER}}`
+Licence ID: `{{LICENSE_ID}}` · Licensee: `{{LICENSEE}}` · Tier: `{{TIER}}` · Updates until: `{{UPDATES_UNTIL}}`
 
-## 1. What you may do
+"LipaKit" (the "Kit") means the source code, documentation and other files you received under this licence ID. "You" means the licensee named above. An "End Product" is software whose main value to its users is its own functionality, not access to the Kit's source code.
 
-- Use LipaKit (the "Kit") to build and run **unlimited end products** that you own, or, on the Agency tier, that you deliver to your clients.
-- Change the Kit's code however you like inside those end products.
-- Let your team members (up to your tier's seat limit) and your clients' developers work on the end products.
+## 1. What your tier allows
+
+|                                 | Lite     | Solo                    | Agency                             |
+| ------------------------------- | -------- | ----------------------- | ---------------------------------- |
+| End Products in production      | 1        | Unlimited, owned by you | Unlimited, for you or your clients |
+| People who may work on the code | 1        | 1                       | Up to 5 (your team)                |
+| Deliver End Products to clients | No       | No                      | Yes, including white-label         |
+| Updates included                | 6 months | 12 months               | 12 months                          |
+
+For every tier you may:
+
+- use and change the Kit's code freely inside your End Products;
+- run as many development, test and staging copies as you need;
+- let a client's developers maintain an End Product you delivered to them (Agency), without those developers getting a licence to reuse the Kit for anything else.
 
 ## 2. What you may not do
 
-- Redistribute, resell, sublicense, or publish the Kit, or any substantial part of it, **as a starter kit, template, boilerplate, library or code sample**, whether free or paid, original or modified.
-- Share your access to the delivery repository or your copy of the Kit with anyone outside your seat limit.
-- Remove this licence or the licence ID from your copy.
-- Use the Kit to build a product that competes with LipaKit (a payments starter kit or boilerplate).
-
-An end product is software whose main value is its own functionality to its users, not access to the Kit's source code.
+- Redistribute, resell, sublicense or publish the Kit, or any substantial part of it, as a starter kit, template, boilerplate, library, course material or code sample, whether free or paid, original or modified.
+- Share the Kit, your copy of it, or your access to its delivery repository with anyone outside your tier's limits.
+- Remove or change the licence ID, this licence, or the copyright notice in your copy.
+- Use the Kit to build a product that competes with it (a payments starter kit, boilerplate or template).
 
 ## 3. Updates
 
-Your purchase includes updates for 12 months. After that, the Kit keeps working forever; renewing the update plan is optional.
+Your tier includes updates for the period shown above. After that, everything you already received keeps working forever; renewing the update plan is optional. Updates are delivered the same way as your original copy.
 
 ## 4. No warranty
 
-The Kit is provided **"as is"**, without warranty of any kind. You are responsible for testing, securing and running any payment system you build with it, including your compliance with Safaricom's terms and Kenyan law (including the Data Protection Act, 2019).
+The Kit is provided **"as is"**, without warranty of any kind, express or implied, including fitness for a particular purpose. Payment systems handle real money: you are responsible for testing, securing and operating anything you build with the Kit, and for your compliance with Safaricom's terms, the Central Bank of Kenya's rules where they apply, and Kenyan law, including the Data Protection Act, 2019.
 
 ## 5. Limitation of liability
 
-To the maximum extent permitted by law, the total liability of the licensor for any claim relating to the Kit is limited to the amount you paid for it. The licensor is not liable for lost revenue, lost payments, lost data, or indirect damages.
+To the maximum extent the law allows, the licensor's total liability for any claim relating to the Kit is limited to the amount you paid for this licence. The licensor is not liable for lost revenue, lost or misdirected payments, lost data, or any indirect or consequential loss.
 
-## 6. Termination
+## 6. Ending this licence
 
-This licence ends automatically if you break section 2. On termination you must stop distributing the Kit; end products already delivered to third parties in good faith may continue to run.
+This licence ends automatically if you break section 2. When it ends you must stop using and distributing the Kit; End Products already delivered to third parties in good faith may keep running.
 
-## 7. Governing law
+## 7. Refunds
 
-The laws of Kenya. Disputes go to the courts of Nairobi.
+{{REFUND_POLICY}}
 
-## 8. Refunds
+## 8. Governing law
 
-`{{REFUND_POLICY}}`: decide before launch (e.g. 14 days, access revoked on refund).
+The laws of Kenya. Any dispute goes to the courts in Nairobi.
 
 ---
 

@@ -13,7 +13,9 @@
     "format": "prettier --write .",
     "db:types": "supabase gen types typescript --linked --schema public > src/lib/supabase/database.types.ts",
     "test:sql": "for f in tests/sql/*.sql; do psql \"$DATABASE_URL\" -X -q -v ON_ERROR_STOP=1 -f \"$f\" || exit 1; done",
-    "doctor": "node scripts/doctor.mjs"
+    "doctor": "node scripts/doctor.mjs",
+    "db:bundle": "node scripts/bundle-sql.mjs",
+    "demo:data": "node scripts/demo-data.mjs"
   },
   "dependencies": {
     "@radix-ui/react-label": "^2.1.17",
