@@ -3,8 +3,10 @@
  * simulator.ts implements the same MpesaClient interface.
  */
 import { createTokenProvider } from "./auth";
+import { buildRegisterC2BRequest, C2B_REGISTER_PATH, registerC2BResponseSchema } from "./c2b";
 import { MpesaError } from "./errors";
 import { DARAJA_BASE_URLS, darajaRequest } from "./http";
+import { buildStandingOrderRequest, RATIBA_PATH, standingOrderResponseSchema } from "./ratiba";
 import { stkPushResponseSchema, stkQueryResponseSchema } from "./schemas";
 import { buildStkPushRequest, buildStkQueryRequest, stkQueryErrorToResult } from "./stk";
 import type { MpesaClient, MpesaConfig, MpesaDeps } from "./types";
@@ -83,6 +85,33 @@ export function createDarajaClient(config: MpesaConfig, deps: MpesaDeps = {}): M
       } catch (error) {
         return stkQueryErrorToResult(error);
       }
+    },
+
+    async registerC2BUrls(input) {
+      const res = await post(
+        C2B_REGISTER_PATH,
+        buildRegisterC2BRequest(config.partyB, input),
+        registerC2BResponseSchema,
+      );
+      if (res.ResponseCode !== "0") {
+        throw new MpesaError(
+          "rejected",
+          `M-Pesa rejected the URL registration: ${res.ResponseDescription ?? res.ResponseCode}`,
+        );
+      }
+      return { description: res.ResponseDescription ?? "Success", raw: res };
+    },
+
+    async createStandingOrder(input) {
+      const res = await post(RATIBA_PATH, buildStandingOrderRequest(config, input), standingOrderResponseSchema);
+      // Daraja's docs show "200" for an accepted request. Confirm with Safaricom.
+      if (!["0", "200"].includes(res.ResponseHeader.responseCode)) {
+        throw new MpesaError(
+          "rejected",
+          `M-Pesa rejected the standing order: ${res.ResponseHeader.responseDescription ?? res.ResponseHeader.responseCode}`,
+        );
+      }
+      return { requestRefId: res.ResponseHeader.responseRefID ?? "", raw: res };
     },
   };
 }

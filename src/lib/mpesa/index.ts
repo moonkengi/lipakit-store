@@ -17,3 +17,20 @@ export { darajaTimestamp, stkPassword } from "./password";
 export { describeResultCode, type ResultCodeInfo } from "./result-codes";
 export { parseStkCallback, type ParsedStkCallback } from "./schemas";
 export { ACCOUNT_REFERENCE_MAX, TRANSACTION_DESC_MAX } from "./stk";
+export {
+  assertDarajaSafeUrl,
+  C2B_ACCEPT,
+  C2B_REJECT_ACCOUNT,
+  findBannedKeyword,
+  parseC2BPayload,
+  type C2BResponseType,
+  type ParsedC2BPayment,
+  type RegisterC2BInput,
+} from "./c2b";
+export {
+  parseRatibaCallback,
+  type ParsedRatibaCallback,
+  type RatibaFrequency,
+  type StandingOrderInput,
+  type StandingOrderResult,
+} from "./ratiba";

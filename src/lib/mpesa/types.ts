@@ -6,6 +6,9 @@
  * into its own package or ported to another stack.
  */
 
+import type { RegisterC2BInput } from "./c2b";
+import type { StandingOrderInput, StandingOrderResult } from "./ratiba";
+
 export type MpesaMode = "simulator" | "sandbox" | "production";
 
 export type StkTransactionType = "CustomerPayBillOnline" | "CustomerBuyGoodsOnline";
@@ -61,6 +64,10 @@ export interface MpesaClient {
   readonly mode: MpesaMode;
   stkPush(input: StkPushInput): Promise<StkPushResult>;
   stkQuery(checkoutRequestId: string): Promise<StkQueryResult>;
+  /** Tell Safaricom where to send Paybill/Till payment notifications for your shortcode. */
+  registerC2BUrls(input: RegisterC2BInput): Promise<{ description: string; raw: unknown }>;
+  /** Ask the customer to approve an M-Pesa Ratiba standing order (they get a prompt on their phone). */
+  createStandingOrder(input: StandingOrderInput): Promise<StandingOrderResult>;
 }
 
 /** Injected dependencies, mainly so tests can control time and the network. */

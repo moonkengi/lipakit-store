@@ -10,6 +10,7 @@
  * It is in-memory: restarting the server forgets pending simulated payments.
  * Meant for `pnpm dev` / `pnpm start` on your machine, not serverless hosting.
  */
+import { assertDarajaSafeUrl } from "./c2b";
 import { MpesaError } from "./errors";
 import { normalizePhone } from "./phone";
 import { describeResultCode } from "./result-codes";
@@ -57,7 +58,22 @@ export type SimulatorSettings = {
   lateCallbackDelayMs: number;
 };
 
-type SimulatorState = SimulatorSettings & { checkouts: Map<string, SimulatedCheckout> };
+export type SimulatedStandingOrder = {
+  requestRefId: string;
+  accountReference: string;
+  phone: string;
+  amountKes: number;
+  frequency: string;
+  callbackUrl: string;
+  createdAt: number;
+  executions: number;
+};
+
+type SimulatorState = SimulatorSettings & {
+  checkouts: Map<string, SimulatedCheckout>;
+  standingOrders: Map<string, SimulatedStandingOrder>;
+  c2bUrls: { confirmationUrl: string; validationUrl: string } | null;
+};
 
 const STATE_KEY = Symbol.for("lipakit.mpesa.simulator");
 const DEFAULT_SETTINGS: SimulatorSettings = { nextOutcome: "success", delayMs: 3_000, lateCallbackDelayMs: 90_000 };
@@ -65,7 +81,7 @@ const MAX_REMEMBERED = 200;
 
 function state(): SimulatorState {
   const g = globalThis as unknown as Record<symbol, SimulatorState | undefined>;
-  g[STATE_KEY] ??= { ...DEFAULT_SETTINGS, checkouts: new Map() };
+  g[STATE_KEY] ??= { ...DEFAULT_SETTINGS, checkouts: new Map(), standingOrders: new Map(), c2bUrls: null };
   return g[STATE_KEY];
 }
 
@@ -88,6 +104,16 @@ export function resetSimulator(): void {
   const s = state();
   Object.assign(s, DEFAULT_SETTINGS);
   s.checkouts.clear();
+  s.standingOrders.clear();
+  s.c2bUrls = null;
+}
+
+export function listSimulatedStandingOrders(): SimulatedStandingOrder[] {
+  return [...state().standingOrders.values()].sort((a, b) => b.createdAt - a.createdAt);
+}
+
+export function getSimulatedC2BUrls() {
+  return state().c2bUrls;
 }
 
 export type SimulatorDeps = MpesaDeps & {
@@ -191,6 +217,124 @@ export function createSimulatorClient(deps: SimulatorDeps = {}): MpesaClient {
         resultDesc: resultDescFor(resultCode),
         raw: { simulator: true, outcome: checkout.outcome },
       };
+    },
+
+    async registerC2BUrls(input) {
+      assertDarajaSafeUrl(input.confirmationUrl);
+      assertDarajaSafeUrl(input.validationUrl);
+      state().c2bUrls = { confirmationUrl: input.confirmationUrl, validationUrl: input.validationUrl };
+      return { description: "Success (simulator)", raw: { simulator: true } };
+    },
+
+    async createStandingOrder(input) {
+      const phone = normalizePhone(input.phone);
+      const requestRefId = `sim-${rand(12, "abcdef0123456789")}`;
+      const order: SimulatedStandingOrder = {
+        requestRefId,
+        accountReference: input.accountReference,
+        phone,
+        amountKes: input.amountKes,
+        frequency: input.frequency,
+        callbackUrl: input.callbackUrl,
+        createdAt: now().getTime(),
+        executions: 0,
+      };
+      state().standingOrders.set(input.accountReference, order);
+      // The "customer" approves the standing order on their phone after the usual delay.
+      schedule(() => {
+        void fetchImpl(input.callbackUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(buildRatibaCallbackPayload(requestRefId, phone)),
+        }).catch((error) => console.error("[mpesa:simulator] could not deliver Ratiba callback", error));
+      }, state().delayMs);
+      return { requestRefId, raw: { simulator: true } };
+    },
+  };
+}
+
+/**
+ * Pretend a customer paid your Paybill/Till directly: POSTs a C2B confirmation
+ * in Daraja's shape to `confirmationUrl`. Returns the TransID used.
+ */
+export async function simulateC2BPayment(opts: {
+  confirmationUrl: string;
+  accountRef: string;
+  amountKes: number;
+  phone: string;
+  shortcode?: string;
+  transId?: string;
+  fetch?: typeof fetch;
+  now?: Date;
+}): Promise<string> {
+  const transId = opts.transId ?? rand(10, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
+  await (opts.fetch ?? fetch)(opts.confirmationUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(buildC2BPayload({ ...opts, transId })),
+  });
+  return transId;
+}
+
+/** Fire one execution of a simulated standing order, as a C2B confirmation carrying its AccountReference. */
+export async function simulateRatibaExecution(opts: {
+  accountReference: string;
+  confirmationUrl: string;
+  fetch?: typeof fetch;
+}): Promise<string> {
+  const order = state().standingOrders.get(opts.accountReference);
+  if (!order)
+    throw new MpesaError("invalid_input", `No simulated standing order with reference ${opts.accountReference}`);
+  order.executions += 1;
+  return simulateC2BPayment({
+    confirmationUrl: opts.confirmationUrl,
+    accountRef: order.accountReference,
+    amountKes: order.amountKes,
+    phone: order.phone,
+    fetch: opts.fetch,
+  });
+}
+
+export function buildC2BPayload(opts: {
+  transId: string;
+  accountRef: string;
+  amountKes: number;
+  phone: string;
+  shortcode?: string;
+  now?: Date;
+}) {
+  return {
+    TransactionType: "Pay Bill",
+    TransID: opts.transId,
+    TransTime: darajaTimestamp(opts.now ?? new Date()),
+    TransAmount: `${opts.amountKes}.00`,
+    BusinessShortCode: opts.shortcode ?? "174379",
+    BillRefNumber: opts.accountRef,
+    InvoiceNumber: "",
+    OrgAccountBalance: "",
+    ThirdPartyTransID: "",
+    MSISDN: normalizePhone(opts.phone),
+    FirstName: "Simulated",
+    MiddleName: "",
+    LastName: "Customer",
+  };
+}
+
+function buildRatibaCallbackPayload(requestRefId: string, phone: string) {
+  return {
+    ResponseHeader: {
+      responseRefID: requestRefId,
+      requestRefID: requestRefId,
+      responseCode: "0",
+      responseDescription: "Request processed successfully",
+    },
+    ResponseBody: {
+      responseData: [
+        { Name: "TransactionID", Value: rand(10, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789") },
+        { Name: "responseCode", Value: "0" },
+        { Name: "Status", Value: "OKAY" },
+        { Name: "Msisdn", Value: `${phone.slice(0, 6)}***${phone.slice(-3)}` },
+      ],
     },
   };
 }

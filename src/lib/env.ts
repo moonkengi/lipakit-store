@@ -10,6 +10,7 @@
  * calls it once on server start so a bad config fails at boot, not mid-payment.
  */
 import { z } from "zod";
+import { findBannedKeyword } from "@/lib/mpesa/c2b";
 
 /** Treat empty strings in .env files as "not set". */
 const optional = () =>
@@ -42,7 +43,20 @@ export const serverSchema = publicSchema
     /** Buy Goods only: the till number (PartyB), when it differs from MPESA_SHORTCODE (the store number). */
     MPESA_TILL_NUMBER: optional(),
     /** Secret path segment in callback URLs. Long and random; see .env.example. */
-    MPESA_CALLBACK_TOKEN: z.string().min(24, "MPESA_CALLBACK_TOKEN must be at least 24 characters"),
+    MPESA_CALLBACK_TOKEN: z
+      .string()
+      .min(24, "MPESA_CALLBACK_TOKEN must be at least 24 characters")
+      .regex(/^[A-Za-z0-9_-]+$/, "MPESA_CALLBACK_TOKEN may only use letters, digits, - and _ (it goes in a URL)")
+      .refine((v) => !findBannedKeyword(v), {
+        message: "MPESA_CALLBACK_TOKEN contains a word Safaricom blocks in callback URLs; generate another",
+      }),
+    /** C2B validation: accept every payment, or reject unknown account numbers (needs validation enabled by Safaricom). */
+    MPESA_C2B_VALIDATION: z.enum(["accept", "match"]).default("accept"),
+    /** Offer M-Pesa Ratiba (standing orders) as auto-renew. Needs Ratiba approval from Safaricom in production. */
+    MPESA_RATIBA_ENABLED: z
+      .enum(["true", "false"])
+      .default("false")
+      .transform((v) => v === "true"),
     MPESA_B2C_INITIATOR: optional(),
     MPESA_B2C_SECURITY_CREDENTIAL: optional(),
 
