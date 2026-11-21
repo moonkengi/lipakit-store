@@ -6,3 +6,8 @@
 
 [build.environment]
   NODE_VERSION = "22"
+
+# Netlify's Next.js runtime (OpenNext). Netlify only adds it automatically to
+# projects that were Next.js when first created, so declare it explicitly.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
