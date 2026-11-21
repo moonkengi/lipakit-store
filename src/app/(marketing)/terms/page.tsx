@@ -31,8 +31,8 @@ export default function TermsPage() {
         <ul className="list-disc space-y-1 pl-5">
           <li>Before delivery: cancel a pre-order any time for a full refund.</li>
           <li>
-            After delivery: because source code can&apos;t be returned, refunds are given only if the kit doesn&apos;t work as
-            described and we can&apos;t fix it within 14 days of you reporting the problem.
+            After delivery: because source code can&apos;t be returned, refunds are given only if the kit doesn&apos;t
+            work as described and we can&apos;t fix it within 14 days of you reporting the problem.
           </li>
           <li>Refunds go back to the M-Pesa number you paid with, within 7 working days of approval.</li>
         </ul>

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
 import { siteConfig } from "@/config/site";
@@ -15,8 +16,14 @@ export function AppShell({ area, nav, children }: { area: string; nav: NavItem[]
     <div className="flex min-h-full flex-1 flex-col md:flex-row">
       <aside className="border-b bg-muted/40 md:w-60 md:border-r md:border-b-0">
         <div className="flex h-14 items-center gap-2 px-4">
-          <Link href="/" className="font-semibold tracking-tight">
-            {siteConfig.name}
+          <Link href="/" aria-label={`${siteConfig.name} home`}>
+            <Image
+              src="/brand/lipakit-logo.png"
+              alt={siteConfig.name}
+              width={635}
+              height={125}
+              className="h-5 w-auto"
+            />
           </Link>
           <span className="text-xs text-muted-foreground">{area}</span>
         </div>

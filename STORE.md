@@ -1,6 +1,6 @@
-# LipaKit store (branch `store`)
+# LipaKit store
 
-LipaKit's own pre-order site, running on the kit itself with Paystack. This branch = `main` + store copy (landing, terms, privacy, `supabase/store-seed.sql`, `netlify.toml`). Pull kit updates in with `git merge main`.
+LipaKit's own pre-order site, running on the kit itself with Paystack. Lives in `moonkengi/lipakit-store`; it is the kit + store copy (landing, terms, privacy, `supabase/store-seed.sql`, `netlify.toml`). Pull kit updates in with `git remote add kit https://github.com/moonkengi/lipakit && git fetch kit && git merge kit/main`.
 
 ## 1. Supabase (one-time)
 
@@ -10,7 +10,7 @@ LipaKit's own pre-order site, running on the kit itself with Paystack. This bran
 
 ## 2. Netlify
 
-1. Add new project → Import from GitHub → `moonkengi/lipakit`, **branch `store`**. Build settings are read from `netlify.toml`.
+1. Add new project → Import from GitHub → `moonkengi/lipakit-store`, branch `main`. Build settings are read from `netlify.toml`.
 2. Site configuration → Environment variables:
 
 | Variable                                                                   | Value                                                           |

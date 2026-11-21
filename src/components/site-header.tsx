@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { siteConfig } from "@/config/site";
@@ -9,8 +10,15 @@ export function SiteHeader() {
   return (
     <header className="border-b">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        <Link href="/" className="font-semibold tracking-tight">
-          {siteConfig.name}
+        <Link href="/" aria-label={`${siteConfig.name} home`}>
+          <Image
+            src="/brand/lipakit-logo.png"
+            alt={siteConfig.name}
+            width={635}
+            height={125}
+            priority
+            className="h-6 w-auto"
+          />
         </Link>
         <nav className="flex items-center gap-2">
           <Button variant="ghost" asChild>
