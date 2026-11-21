@@ -8,7 +8,7 @@ export const siteConfig = {
   /** Product name shown in the UI, emails, SMS and receipts. */
   name: "LipaKit",
   /** One-line description used in <meta> tags and the landing page. */
-  description: "Launch an M-Pesa powered SaaS in a weekend. Daraja done right.",
+  description: "Software that works the way you do, paid for with M-Pesa.", // replace with your own tagline
   /** Prefix for receipt numbers, e.g. LK-2026-000123. Keep it short. */
   receiptPrefix: "LK",
   /** Support contact shown in the footer and on receipts. */

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 export type NavItem = {
   href: string;
   label: string;
-  /** Shown greyed out and not clickable. Used for sections a later milestone fills in. */
+  /** Shown greyed out and not clickable, e.g. for a section you haven't built yet. */
   disabled?: boolean;
 };
 
