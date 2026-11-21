@@ -27,6 +27,7 @@ export {
   type ParsedC2BPayment,
   type RegisterC2BInput,
 } from "./c2b";
+export { parseB2CResult, parseB2CTimeout, type B2CCommand, type ParsedB2CResult } from "./b2c";
 export {
   parseRatibaCallback,
   type ParsedRatibaCallback,

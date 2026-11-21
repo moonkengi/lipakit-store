@@ -6,6 +6,7 @@
  * into its own package or ported to another stack.
  */
 
+import type { B2CCredentials, B2CInput, B2CRequestResult } from "./b2c";
 import type { RegisterC2BInput } from "./c2b";
 import type { StandingOrderInput, StandingOrderResult } from "./ratiba";
 
@@ -29,6 +30,8 @@ export type MpesaConfig = {
   partyB: string;
   /** Per-request timeout for Daraja calls. Default 15s. */
   timeoutMs?: number;
+  /** B2C payouts (optional). */
+  b2c?: B2CCredentials;
 };
 
 export type StkPushInput = {
@@ -68,6 +71,8 @@ export interface MpesaClient {
   registerC2BUrls(input: RegisterC2BInput): Promise<{ description: string; raw: unknown }>;
   /** Ask the customer to approve an M-Pesa Ratiba standing order (they get a prompt on their phone). */
   createStandingOrder(input: StandingOrderInput): Promise<StandingOrderResult>;
+  /** Send money to an M-Pesa number. The outcome arrives later at input.resultUrl. */
+  b2cPayment(input: B2CInput): Promise<B2CRequestResult>;
 }
 
 /** Injected dependencies, mainly so tests can control time and the network. */

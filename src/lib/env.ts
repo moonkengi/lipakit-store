@@ -24,6 +24,8 @@ const publicSchema = z.object({
   NEXT_PUBLIC_SITE_URL: z.url().transform((v) => v.replace(/\/+$/, "")),
   NEXT_PUBLIC_SUPABASE_URL: z.url(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
+  /** Web push (optional): the public half of your VAPID key pair. */
+  NEXT_PUBLIC_VAPID_PUBLIC_KEY: optional(),
 });
 
 export const mpesaModes = ["simulator", "sandbox", "production"] as const;
@@ -57,6 +59,8 @@ export const serverSchema = publicSchema
       .enum(["true", "false"])
       .default("false")
       .transform((v) => v === "true"),
+    /** B2C shortcode (PartyA for payouts). Defaults to MPESA_SHORTCODE. */
+    MPESA_B2C_SHORTCODE: optional(),
     MPESA_B2C_INITIATOR: optional(),
     MPESA_B2C_SECURITY_CREDENTIAL: optional(),
 
@@ -71,7 +75,12 @@ export const serverSchema = publicSchema
 
     // --- Telegram ---
     TELEGRAM_BOT_TOKEN: optional(),
-    TELEGRAM_WEBHOOK_SECRET: optional(),
+    /** The bot's @username without the @, for "Link Telegram" deep links. */
+    TELEGRAM_BOT_USERNAME: optional(),
+    /** Telegram echoes this in a header on every webhook call. 1-256 chars: letters, digits, _ and -. */
+    TELEGRAM_WEBHOOK_SECRET: optional().refine((v) => v === undefined || /^[A-Za-z0-9_-]{16,256}$/.test(v), {
+      message: "TELEGRAM_WEBHOOK_SECRET must be 16-256 characters: letters, digits, _ and -",
+    }),
     /** Comma-separated chat IDs, e.g. "12345,-100987". */
     TELEGRAM_ADMIN_CHAT_IDS: optional().transform((v) =>
       v
@@ -82,6 +91,22 @@ export const serverSchema = publicSchema
         : [],
     ),
 
+    // --- Admin alert channels (all optional) ---
+    SLACK_WEBHOOK_URL: optional().pipe(z.url().startsWith("https://").optional()),
+    DISCORD_WEBHOOK_URL: optional().pipe(z.url().startsWith("https://").optional()),
+    /** Generic webhook: every event as signed JSON. */
+    ALERT_WEBHOOK_URL: optional().pipe(z.url().optional()),
+    ALERT_WEBHOOK_SECRET: optional(),
+
+    // --- Web push (optional) ---
+    VAPID_PRIVATE_KEY: optional(),
+    /** Contact for push services, e.g. mailto:you@example.com */
+    VAPID_SUBJECT: optional(),
+
+    // --- B2C payouts (Pro) ---
+    /** Most KES all payouts together may send per day (Nairobi time). A safety brake, not a Safaricom limit. */
+    B2C_DAILY_LIMIT_KES: z.coerce.number().int().min(0).default(50_000),
+
     // --- Jobs and billing ---
     CRON_SECRET: z.string().min(16, "CRON_SECRET must be at least 16 characters"),
     GRACE_DAYS: z.coerce.number().int().min(0).max(30).default(3),
@@ -90,6 +115,13 @@ export const serverSchema = publicSchema
     VERCEL_ENV: optional(),
   })
   .superRefine((env, ctx) => {
+    if (env.VAPID_PRIVATE_KEY && !env.VAPID_SUBJECT) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["VAPID_SUBJECT"],
+        message: "VAPID_SUBJECT is required with web push keys (e.g. mailto:you@example.com)",
+      });
+    }
     // The simulator fakes payments; it must never run on a live production deployment.
     if (env.MPESA_MODE === "simulator" && env.VERCEL_ENV === "production") {
       ctx.addIssue({
@@ -115,6 +147,9 @@ export const serverSchema = publicSchema
       ["AT_USERNAME", "AT_API_KEY"],
       ["RESEND_API_KEY", "EMAIL_FROM"],
       ["TELEGRAM_BOT_TOKEN", "TELEGRAM_WEBHOOK_SECRET"],
+      ["ALERT_WEBHOOK_URL", "ALERT_WEBHOOK_SECRET"],
+      ["NEXT_PUBLIC_VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY"],
+      ["MPESA_B2C_INITIATOR", "MPESA_B2C_SECURITY_CREDENTIAL"],
     ] as const;
     for (const [a, b] of pairs) {
       if (Boolean(env[a]) !== Boolean(env[b])) {
@@ -159,6 +194,7 @@ export const publicEnv: PublicEnv = parsePublicEnv({
   NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  NEXT_PUBLIC_VAPID_PUBLIC_KEY: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
 });
 
 let cachedServerEnv: ServerEnv | undefined;

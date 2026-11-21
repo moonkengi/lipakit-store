@@ -5,6 +5,7 @@
 import "server-only";
 import { ZodError } from "zod";
 import { siteConfig } from "@/config/site";
+import { alertPayment } from "@/lib/alerts/events";
 import { fulfilReceipts } from "@/lib/billing/fulfil";
 import { getServerEnv } from "@/lib/env";
 import { parseC2BPayload, type C2BResponseType } from "@/lib/mpesa";
@@ -86,6 +87,17 @@ export async function processC2BConfirmation(callbackId: string, payload: unknow
       callbackId,
       outcome === "unmatched" || outcome === "duplicate" ? `${outcome}: ${decision.reason}` : null,
     );
+    if (outcome === "settled" || outcome === "needs_review") {
+      await alertPayment({
+        status: outcome === "settled" ? "paid" : "needs_review",
+        amountKes: payment.amountKes,
+        accountRef: payment.accountRef || "(none)",
+        channel: "Paybill/Till",
+        phone: payment.phoneIsPlain ? payment.phone : null,
+        receipt: payment.transId,
+        reason: decision.reason,
+      });
+    }
     if (outcome === "settled") await fulfilReceipts({ limit: 5 });
   } catch (error) {
     const message =

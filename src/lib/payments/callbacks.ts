@@ -9,6 +9,7 @@
 import "server-only";
 import { ZodError } from "zod";
 import { parseStkCallback } from "@/lib/mpesa";
+import { alertCallbackProblem, alertStkSettled } from "@/lib/alerts/events";
 import { fulfilReceipts } from "@/lib/billing/fulfil";
 import { resolveStk } from "@/lib/reconcile/stk";
 import type { Json, MpesaCallbackKind } from "@/lib/supabase/database.types";
@@ -47,6 +48,7 @@ export async function recordProcessing(callbackId: string, error: string | null)
     .update({ processed_at: new Date().toISOString(), error })
     .eq("id", callbackId);
   if (dbError) console.error("[mpesa:callback] could not update log row", callbackId, dbError.message);
+  if (error) await alertCallbackProblem(callbackId, error);
 }
 
 /** Process one logged STK callback. Never throws: problems are written to the log row. */
@@ -63,7 +65,10 @@ export async function processStkCallback(callbackId: string, payload: unknown): 
     } else {
       // still_pending is not an error: STK Query hasn't caught up yet, and the poller will settle it.
       await recordProcessing(callbackId, null);
-      if (result.kind === "done" && result.settlement?.orderStatus === "paid") await fulfilReceipts({ limit: 5 });
+      if (result.kind === "done" && result.outcome === "settled" && result.settlement) {
+        await alertStkSettled(cb.checkoutRequestId, result.settlement.orderStatus);
+        if (result.settlement.orderStatus === "paid") await fulfilReceipts({ limit: 5 });
+      }
     }
   } catch (error) {
     const message =

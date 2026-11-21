@@ -24,7 +24,21 @@ export function mpesaConfigFromEnv(): MpesaConfig {
     passkey: env.MPESA_PASSKEY ?? "",
     transactionType: isTill ? "CustomerBuyGoodsOnline" : "CustomerPayBillOnline",
     partyB: isTill ? (env.MPESA_TILL_NUMBER ?? shortcode) : shortcode,
+    b2c:
+      env.MPESA_B2C_INITIATOR && env.MPESA_B2C_SECURITY_CREDENTIAL
+        ? {
+            initiatorName: env.MPESA_B2C_INITIATOR,
+            securityCredential: env.MPESA_B2C_SECURITY_CREDENTIAL,
+            shortcode: env.MPESA_B2C_SHORTCODE ?? shortcode,
+          }
+        : undefined,
   };
+}
+
+/** Payouts are available when B2C credentials are set, or always in simulator mode. */
+export function b2cEnabled(): boolean {
+  const env = getServerEnv();
+  return env.MPESA_MODE === "simulator" || Boolean(env.MPESA_B2C_INITIATOR && env.MPESA_B2C_SECURITY_CREDENTIAL);
 }
 
 /** One client per server process, so the OAuth token cache is shared. */
@@ -33,7 +47,7 @@ export function getMpesaClient(): MpesaClient {
   return client;
 }
 
-export type CallbackKind = "stk" | "c2b/confirm" | "c2b/validate" | "ratiba";
+export type CallbackKind = "stk" | "c2b/confirm" | "c2b/validate" | "ratiba" | "b2c/result" | "b2c/timeout";
 
 /**
  * Full public URL Daraja should call, including the secret path token.

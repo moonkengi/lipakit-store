@@ -3,6 +3,7 @@
  * simulator.ts implements the same MpesaClient interface.
  */
 import { createTokenProvider } from "./auth";
+import { B2C_PATH, b2cResponseSchema, buildB2CRequest } from "./b2c";
 import { buildRegisterC2BRequest, C2B_REGISTER_PATH, registerC2BResponseSchema } from "./c2b";
 import { MpesaError } from "./errors";
 import { DARAJA_BASE_URLS, darajaRequest } from "./http";
@@ -112,6 +113,19 @@ export function createDarajaClient(config: MpesaConfig, deps: MpesaDeps = {}): M
         );
       }
       return { requestRefId: res.ResponseHeader.responseRefID ?? "", raw: res };
+    },
+
+    async b2cPayment(input) {
+      if (!config.b2c)
+        throw new MpesaError(
+          "invalid_input",
+          "B2C payouts aren't configured (MPESA_B2C_INITIATOR, MPESA_B2C_SECURITY_CREDENTIAL).",
+        );
+      const res = await post(B2C_PATH, buildB2CRequest(config.b2c, input), b2cResponseSchema);
+      if (res.ResponseCode !== "0") {
+        throw new MpesaError("rejected", `M-Pesa rejected the payout: ${res.ResponseDescription ?? res.ResponseCode}`);
+      }
+      return { conversationId: res.ConversationID, originatorConversationId: res.OriginatorConversationID, raw: res };
     },
   };
 }

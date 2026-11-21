@@ -250,6 +250,61 @@ export function createSimulatorClient(deps: SimulatorDeps = {}): MpesaClient {
       }, state().delayMs);
       return { requestRefId, raw: { simulator: true } };
     },
+
+    async b2cPayment(input) {
+      const phone = normalizePhone(input.phone);
+      if (!Number.isInteger(input.amountKes) || input.amountKes < 1) {
+        throw new MpesaError("invalid_input", "The payout amount must be a whole number of shillings, at least KES 1.");
+      }
+      const conversationId = `AG_${darajaTimestamp(now())}_${rand(20, "abcdef0123456789")}`;
+      const outcome = state().nextOutcome;
+      const send = (url: string, body: unknown) =>
+        void fetchImpl(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        }).catch((error) => console.error("[mpesa:simulator] could not deliver B2C callback", error));
+      // Reuse the STK outcome picker: success → paid out, timeout → queue timeout, missing → silence, anything else → failure.
+      if (outcome === "timeout") {
+        schedule(
+          () =>
+            send(input.timeoutUrl, {
+              OriginatorConversationID: input.originatorConversationId,
+              ConversationID: conversationId,
+            }),
+          state().delayMs,
+        );
+      } else if (outcome !== "missing_callback") {
+        const ok = ["success", "duplicate_callback", "late_callback", "amount_mismatch"].includes(outcome);
+        const code = ok ? 0 : outcome === "insufficient_funds" ? 1 : 2001;
+        const body = {
+          Result: {
+            ResultType: 0,
+            ResultCode: code,
+            ResultDesc: ok ? "The service request is processed successfully." : resultDescFor(code),
+            OriginatorConversationID: input.originatorConversationId,
+            ConversationID: conversationId,
+            TransactionID: ok ? rand(10, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789") : "0000000000",
+            ResultParameters: ok
+              ? {
+                  ResultParameter: [
+                    { Key: "TransactionAmount", Value: input.amountKes },
+                    { Key: "ReceiverPartyPublicName", Value: `${phone} - SIMULATED CUSTOMER` },
+                    { Key: "TransactionCompletedDateTime", Value: darajaTimestamp(now()) },
+                  ],
+                }
+              : undefined,
+          },
+        };
+        schedule(() => send(input.resultUrl, body), state().delayMs);
+        if (outcome === "duplicate_callback") schedule(() => send(input.resultUrl, body), state().delayMs + 1_000);
+      }
+      return {
+        conversationId,
+        originatorConversationId: input.originatorConversationId,
+        raw: { simulator: true, outcome },
+      };
+    },
   };
 }
 
