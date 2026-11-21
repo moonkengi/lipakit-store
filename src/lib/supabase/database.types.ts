@@ -210,6 +210,20 @@ export type Database = {
     Views: { [_ in never]: never };
     Functions: {
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
+      mpesa_settle_stk: {
+        Args: {
+          p_checkout_request_id: string;
+          p_tx_status: string;
+          p_order_status: string;
+          p_order_reason: string;
+          p_result_code?: number;
+          p_result_desc?: string;
+          p_receipt?: string;
+          p_phone?: string;
+          p_raw?: Json;
+        };
+        Returns: string;
+      };
     };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };
