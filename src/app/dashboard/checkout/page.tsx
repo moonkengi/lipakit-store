@@ -6,6 +6,7 @@ import { intervalLabel } from "@/lib/billing/plans";
 import { createClient } from "@/lib/supabase/server";
 import { formatKes } from "@/lib/utils";
 import { MpesaCheckout } from "@/components/mpesa-checkout";
+import { startTrialAction } from "../billing/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -23,14 +24,14 @@ export default function CheckoutPage({ searchParams }: PageProps<"/dashboard/che
 
 async function Checkout({ searchParams }: Pick<PageProps<"/dashboard/checkout">, "searchParams">) {
   const user = await requireUser("/dashboard/checkout");
-  const { plan: planCode } = await searchParams;
+  const { plan: planCode, error } = await searchParams;
 
   const supabase = await createClient();
   const { data: plan } =
     typeof planCode === "string"
       ? await supabase
           .from("plans")
-          .select("code, name, price_kes, interval")
+          .select("code, name, price_kes, interval, trial_days")
           .eq("code", planCode)
           .eq("is_active", true)
           .maybeSingle()
@@ -51,6 +52,12 @@ async function Checkout({ searchParams }: Pick<PageProps<"/dashboard/checkout">,
     );
   }
 
+  // New users get the plan's free trial instead of paying up front.
+  const { count: pastSubscriptions } = await supabase
+    .from("subscriptions")
+    .select("id", { count: "exact", head: true });
+  const offerTrial = plan.trial_days > 0 && (pastSubscriptions ?? 0) === 0;
+
   return (
     <Card>
       <CardHeader>
@@ -59,11 +66,28 @@ async function Checkout({ searchParams }: Pick<PageProps<"/dashboard/checkout">,
           {formatKes(plan.price_kes)} {intervalLabel(plan.interval)}
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <MpesaCheckout
-          plan={{ code: plan.code, name: plan.name, priceKes: plan.price_kes }}
-          defaultPhone={user.phone}
-        />
+      <CardContent className="space-y-4">
+        {typeof error === "string" && (
+          <p className="text-sm text-destructive" role="alert">
+            {error}
+          </p>
+        )}
+        {offerTrial ? (
+          <form action={startTrialAction} className="space-y-2">
+            <input type="hidden" name="planCode" value={plan.code} />
+            <Button type="submit" className="w-full">
+              Start your {plan.trial_days}-day free trial
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              No payment now. We&apos;ll remind you before the trial ends.
+            </p>
+          </form>
+        ) : (
+          <MpesaCheckout
+            plan={{ code: plan.code, name: plan.name, priceKes: plan.price_kes }}
+            defaultPhone={user.phone}
+          />
+        )}
       </CardContent>
     </Card>
   );

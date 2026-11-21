@@ -35,13 +35,22 @@ export async function POST(request: Request) {
     .maybeSingle();
   if (!plan) return NextResponse.json({ error: "That plan isn't available." }, { status: 404 });
 
+  // Already on a live plan? Then this payment renews it (from the current period end).
+  const { data: live } = await supabase
+    .from("subscriptions")
+    .select("id")
+    .eq("user_id", user.id)
+    .in("status", ["trialing", "active", "grace"])
+    .maybeSingle();
+
   try {
     const result = await startStkCheckout({
       userId: user.id,
       phone: parsed.data.phone,
       amountKes: plan.price_kes,
-      purpose: "subscription",
+      purpose: live ? "renewal" : "subscription",
       planId: plan.id,
+      subscriptionId: live?.id,
     });
     // Remember the number for next time (users may edit their own phone; see RLS migration).
     if (user.phone !== result.phone) {

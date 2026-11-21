@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Dashboard" };
 
 const nav: NavItem[] = [
   { href: "/dashboard", label: "Overview" },
-  { href: "/dashboard/billing", label: "Billing", disabled: true }, // M3
+  { href: "/dashboard/billing", label: "Billing" },
   { href: "/dashboard/settings", label: "Settings", disabled: true }, // M4 (Telegram link)
 ];
 

@@ -1,6 +1,7 @@
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { RegisterC2BButton } from "./register-c2b-button";
 
 export default async function AdminOverviewPage() {
   await requireAdmin();
@@ -40,6 +41,18 @@ export default async function AdminOverviewPage() {
           </Card>
         ))}
       </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Paybill / Till payments (C2B)</CardTitle>
+          <CardDescription>
+            Tell Safaricom where to send payments customers make from the M-Pesa menu. In production you may only be
+            able to do this once per shortcode.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <RegisterC2BButton />
+        </CardContent>
+      </Card>
       <p className="text-sm text-muted-foreground">Revenue numbers and the full admin panel arrive in Milestone 4.</p>
     </div>
   );

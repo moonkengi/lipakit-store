@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
+import { hasAccess } from "@/lib/billing/access";
 import { createClient } from "@/lib/supabase/server";
 import { formatKes } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +27,9 @@ export default async function DashboardPage() {
       .limit(10),
   ]);
 
+  // Example feature gate: plans with {"reports": true} in their features unlock this card.
+  const canSeeReports = await hasAccess(user, "reports");
+
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <h1 className="text-2xl font-semibold tracking-tight">Welcome{user.fullName ? `, ${user.fullName}` : ""}</h1>
@@ -51,6 +55,30 @@ export default async function DashboardPage() {
             <Button asChild>
               <Link href="/pricing">Choose a plan</Link>
             </Button>
+          )}
+          {subscription && (
+            <Button asChild variant="outline">
+              <Link href="/dashboard/billing">Manage billing</Link>
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Reports</CardTitle>
+          <CardDescription>A sample feature gate. See docs/07-customising.md.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {canSeeReports ? (
+            <p className="text-sm">Your plan includes reports. Build them here.</p>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Reports are on the Pro plan.{" "}
+              <Link href="/pricing" className="underline">
+                Upgrade
+              </Link>
+            </p>
           )}
         </CardContent>
       </Card>

@@ -3,14 +3,23 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { outcomeLabels, simulatorOutcomes, type SimulatorOutcome } from "@/lib/mpesa/simulator-outcomes";
-import type { SimulatedCheckout, SimulatorSettings } from "@/lib/mpesa/simulator";
+import type { SimulatedCheckout, SimulatedStandingOrder, SimulatorSettings } from "@/lib/mpesa/simulator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-type Snapshot = { settings: SimulatorSettings; checkouts: SimulatedCheckout[] };
+type Snapshot = {
+  settings: SimulatorSettings;
+  checkouts: SimulatedCheckout[];
+  standingOrders: SimulatedStandingOrder[];
+};
+type Action =
+  | { action: "poll" }
+  | { action: "renewals" }
+  | { action: "c2b_payment"; accountRef: string; amountKes: number; phone: string }
+  | { action: "ratiba_execute"; accountRef: string };
 
 export function SimulatorPanel() {
   const [snap, setSnap] = useState<Snapshot | null>(null);
@@ -30,14 +39,15 @@ export function SimulatorPanel() {
     };
   }, [refresh]);
 
-  async function update(patch: Partial<SimulatorSettings> | { action: "poll" }) {
+  async function update(patch: Partial<SimulatorSettings> | Action) {
     const res = await fetch("/api/dev/simulate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(patch),
     });
     const body = await res.json();
-    if ("summary" in body) setMessage(`Poller: ${JSON.stringify(body.summary)}`);
+    if ("summary" in body) setMessage(JSON.stringify(body.summary));
+    if ("error" in body) setMessage(`Error: ${body.error}`);
     await refresh();
   }
 
@@ -96,15 +106,80 @@ export function SimulatorPanel() {
               />
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Button variant="outline" onClick={() => update({ action: "poll" })}>
               Run poller now
             </Button>
+            <Button variant="outline" onClick={() => update({ action: "renewals" })}>
+              Run renewals job now
+            </Button>
             <span className="text-xs text-muted-foreground">
-              Runs automatically every 20s in simulator mode; it only checks pushes older than 60s.
+              The poller runs every 20s in simulator mode and checks pushes older than 60s. Renewals run daily in
+              production.
             </span>
           </div>
           {message && <p className="font-mono text-xs">{message}</p>}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Paybill payment (C2B)</CardTitle>
+          <CardDescription>
+            Pretend a customer paid from the M-Pesa menu. Use an order&apos;s account number to match it, anything else
+            to land in the unmatched queue.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form
+            className="grid gap-3 sm:grid-cols-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const f = new FormData(e.currentTarget);
+              void update({
+                action: "c2b_payment",
+                accountRef: String(f.get("accountRef")),
+                amountKes: Number(f.get("amountKes")),
+                phone: String(f.get("phone")),
+              });
+            }}
+          >
+            <Input name="accountRef" placeholder="Account no. e.g. LKAB12CD34" required />
+            <Input name="amountKes" type="number" min={1} placeholder="Amount (KES)" required />
+            <Input name="phone" placeholder="0712345678" defaultValue="0712345678" required />
+            <Button type="submit">Send payment</Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Ratiba standing orders</CardTitle>
+          <CardDescription>
+            Created when a user turns on automatic renewal. Fire one scheduled payment on demand.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {snap.standingOrders.length === 0 ? (
+            <p className="text-sm text-muted-foreground">None yet. Enable automatic renewal on the billing page.</p>
+          ) : (
+            <ul className="divide-y text-sm">
+              {snap.standingOrders.map((o) => (
+                <li key={o.accountReference} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                  <span className="font-mono text-xs">{o.accountReference}</span>
+                  <span>KES {o.amountKes}</span>
+                  <span className="text-xs text-muted-foreground">payments so far: {o.executions}</span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => update({ action: "ratiba_execute", accountRef: o.accountReference })}
+                  >
+                    Run payment
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
         </CardContent>
       </Card>
 

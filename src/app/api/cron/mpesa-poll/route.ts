@@ -16,6 +16,7 @@ import { getServerEnv } from "@/lib/env";
 import { createSupabaseStkStore, getMpesaClient } from "@/lib/payments";
 import { pollPendingStk } from "@/lib/reconcile/stk";
 import { hasBearer } from "@/lib/security";
+import { fulfilReceipts } from "@/lib/billing/fulfil";
 
 // Give slow Daraja queries room; 50 pushes × a few seconds worst case.
 export const maxDuration = 60;
@@ -25,5 +26,10 @@ export async function GET(request: Request) {
     return new NextResponse(null, { status: 401 });
   }
   const summary = await pollPendingStk({ store: createSupabaseStkStore(), mpesa: getMpesaClient() });
-  return NextResponse.json(summary);
+  // Also sweep up receipt PDFs and emails/SMS that failed the first time.
+  const receipts = await fulfilReceipts({ limit: 10 }).catch((e) => {
+    console.error("[cron] receipt fulfilment failed", e);
+    return null;
+  });
+  return NextResponse.json({ ...summary, receipts });
 }
