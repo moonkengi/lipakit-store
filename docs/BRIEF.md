@@ -142,7 +142,7 @@ v1 list, re-weighted:
 
 **M4: Admin, Telegram, B2C, Health**: v1 scope, plus the Health page and `pnpm run doctor`.
 
-**M5: Docs, licence, delivery**: v1 scope, plus the failure-modes doc, the final licence, per-buyer delivery and watermarking (14), the update channel (13), and sales running on LipaKit's own checkout.
+**M5: Docs, licence, delivery** ✅: v1 docs (01–10, failure modes, upgrading, changelog), draft licence with tiers, signed offline licence keys, per-buyer zip delivery with watermarking and tracing (14), optional GitHub delivery repo (13), phone OTP sign-in. **No shortcode yet:** sales run through Paystack Starter Business + `issue.mjs` per sale (docs/SELLING.md); move sales onto LipaKit's own checkout once Kent has a Till or Paybill.
 
 **M6: LipaKit Cloud (separate repo; only after M0 says go)**: the relay and monitor (12).
 
