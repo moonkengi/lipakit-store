@@ -33,3 +33,11 @@ A running log of choices made while building the kit, newest last. Each entry sa
 **Phone OTP is behind `features.phoneOtp` (off) and not built yet.** Supabase's phone auth needs a supported SMS provider. Africa's Talking isn't one of the built-in options, so it needs Supabase's "Send SMS" auth hook. Planned alongside the SMS notifier in M3.
 
 **Typed database client from a hand-written `database.types.ts`.** Matches the migrations exactly so the kit type-checks with no Supabase project. `pnpm db:types` replaces it with CLI-generated types.
+
+## Brief v2 (2026-11-21)
+
+**The brief moved to `docs/BRIEF.md` (v2) after a stress test of the idea.** Main changes: an optional auto-renew method using M-Pesa Ratiba (standing orders), a payment-provider interface, a simulator covering every failure the sandbox can't produce, a validation milestone (M0) before the build goes further, LipaKit Cloud (hosted callback relay) as the recurring-revenue part, private per-buyer delivery with watermarking, and a draft commercial licence. Section 0 of the brief maps each risk to its fix.
+
+**`lib/mpesa` and `lib/reconcile` stay framework-agnostic** (no Next.js, Supabase or React imports), so the core can later ship as a standalone package or be ported to Laravel/Django.
+
+**The repo must be private.** It was briefly public after the first push; see BRIEF section 14.
