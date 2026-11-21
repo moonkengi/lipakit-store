@@ -39,6 +39,8 @@ export const serverSchema = publicSchema
     MPESA_SHORTCODE: optional(),
     MPESA_PASSKEY: optional(),
     MPESA_TILL_OR_PAYBILL: z.enum(["paybill", "till"]).default("paybill"),
+    /** Buy Goods only: the till number (PartyB), when it differs from MPESA_SHORTCODE (the store number). */
+    MPESA_TILL_NUMBER: optional(),
     /** Secret path segment in callback URLs. Long and random; see .env.example. */
     MPESA_CALLBACK_TOKEN: z.string().min(24, "MPESA_CALLBACK_TOKEN must be at least 24 characters"),
     MPESA_B2C_INITIATOR: optional(),
@@ -69,8 +71,19 @@ export const serverSchema = publicSchema
     // --- Jobs and billing ---
     CRON_SECRET: z.string().min(16, "CRON_SECRET must be at least 16 characters"),
     GRACE_DAYS: z.coerce.number().int().min(0).max(30).default(3),
+
+    // Set by Vercel automatically ("production" | "preview" | "development"). Not something you configure.
+    VERCEL_ENV: optional(),
   })
   .superRefine((env, ctx) => {
+    // The simulator fakes payments; it must never run on a live production deployment.
+    if (env.MPESA_MODE === "simulator" && env.VERCEL_ENV === "production") {
+      ctx.addIssue({
+        code: "custom",
+        path: ["MPESA_MODE"],
+        message: "MPESA_MODE=simulator is not allowed on a production deployment",
+      });
+    }
     // Real Daraja modes need real credentials. The simulator needs none.
     if (env.MPESA_MODE !== "simulator") {
       for (const key of ["MPESA_CONSUMER_KEY", "MPESA_CONSUMER_SECRET", "MPESA_SHORTCODE", "MPESA_PASSKEY"] as const) {
