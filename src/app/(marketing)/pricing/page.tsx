@@ -99,6 +99,8 @@ function ProductGrid({ products }: { products: Product[] }) {
 /** Turn the features jsonb into display lines. Booleans show the key; numbers show "key: n". */
 function featureLines(features: Plan["features"]): string[] {
   if (!features || typeof features !== "object" || Array.isArray(features)) return [];
+  // {"lines": ["...", "..."]} keeps your order (Postgres doesn't keep jsonb key order).
+  if (Array.isArray(features.lines)) return features.lines.filter((l): l is string => typeof l === "string");
   return Object.entries(features).flatMap(([key, value]) => {
     const label = key.replaceAll("_", " ");
     if (value === true) return [label];

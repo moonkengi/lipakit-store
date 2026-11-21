@@ -9,7 +9,7 @@ export const features = {
   /** Email magic link sign-in via Supabase Auth. */
   magicLink: true,
   /** Google OAuth via Supabase Auth. Enable the provider in Supabase first. */
-  googleAuth: true,
+  googleAuth: false, // turn on after enabling Google in Supabase → Authentication → Providers
   /**
    * Phone number + SMS code sign-in, delivered by Africa's Talking through
    * Supabase's Send SMS hook. Needs setup first: docs/01-setup.md → "Phone sign-in".
