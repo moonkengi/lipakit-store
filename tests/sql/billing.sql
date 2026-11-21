@@ -163,5 +163,31 @@ end;
 $$;
 reset role;
 
+-- Products: a one-time product order gets a receipt and never touches subscriptions.
+insert into auth.users (id, email) values ('00000000-0000-0000-0000-0000000000c9', 'product-test@example.com');
+insert into public.products (id, code, name, price_kes) values
+  ('00000000-0000-0000-0000-0000000000e1', 'test_ebook', 'Test E-book', 500);
+do $$
+declare v_order uuid;
+begin
+  insert into public.orders (user_id, purpose, amount_kes, account_ref, product_id)
+  values ('00000000-0000-0000-0000-0000000000c9', 'one_off', 500, 'LKPROD01', '00000000-0000-0000-0000-0000000000e1')
+  returning id into v_order;
+  insert into public.mpesa_transactions (order_id, kind, checkout_request_id, amount_kes)
+  values (v_order, 'stk', 'ws_LKPROD01', 500);
+  assert public.mpesa_settle_stk('ws_LKPROD01', 'success', 'paid', 'ok', 0, 'ok', 'RCPTP00001') = 'settled';
+  assert (select status from public.orders where id = v_order) = 'paid', 'product order paid';
+  assert exists (select 1 from public.receipts where order_id = v_order), 'product order has a receipt';
+  assert not exists (select 1 from public.subscriptions where user_id = '00000000-0000-0000-0000-0000000000c9'),
+    'a product purchase creates no subscription';
+
+  begin
+    insert into public.orders (user_id, purpose, amount_kes, account_ref, product_id)
+    values ('00000000-0000-0000-0000-0000000000c9', 'subscription', 500, 'LKPROD02', '00000000-0000-0000-0000-0000000000e1');
+    raise exception 'a product order must be one_off';
+  exception when check_violation then null;
+  end;
+end $$;
+
 select 'billing: all assertions passed' as result;
 rollback;

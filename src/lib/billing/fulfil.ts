@@ -36,12 +36,12 @@ async function loadReceiptContext(receipt: ReceiptRow) {
   const db = createAdminClient();
   const { data: order, error } = await db
     .from("orders")
-    .select("id, user_id, purpose, amount_kes, account_ref, paid_at, plan_id, subscription_id")
+    .select("id, user_id, purpose, amount_kes, account_ref, paid_at, plan_id, product_id, subscription_id")
     .eq("id", receipt.order_id)
     .single();
   if (error || !order) throw new Error(`receipt ${receipt.number}: order not found`);
 
-  const [{ data: profile }, { data: tx }, { data: plan }, { data: sub }] = await Promise.all([
+  const [{ data: profile }, { data: tx }, { data: plan }, { data: sub }, { data: product }] = await Promise.all([
     db.from("profiles").select("full_name, email, phone, telegram_chat_id").eq("id", order.user_id).single(),
     db
       .from("mpesa_transactions")
@@ -59,8 +59,11 @@ async function loadReceiptContext(receipt: ReceiptRow) {
           .eq("id", order.subscription_id)
           .single()
       : Promise.resolve({ data: null }),
+    order.product_id
+      ? db.from("products").select("name").eq("id", order.product_id).single()
+      : Promise.resolve({ data: null }),
   ]);
-  return { order, profile, tx, plan, sub };
+  return { order, profile, tx, plan, sub, product };
 }
 
 export async function ensureReceiptPdf(receipt: ReceiptRow): Promise<string> {
@@ -79,7 +82,7 @@ export async function ensureReceiptPdf(receipt: ReceiptRow): Promise<string> {
 async function renderPdf(receipt: ReceiptRow, ctx: Awaited<ReturnType<typeof loadReceiptContext>>) {
   const description =
     ctx.order.purpose === "one_off"
-      ? "Payment"
+      ? (ctx.product?.name ?? "Payment")
       : `${ctx.plan?.name ?? "Subscription"} (${ctx.order.purpose === "renewal" ? "renewal" : "subscription"})`;
   return buildReceiptPdf({
     businessName: siteConfig.name,

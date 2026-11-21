@@ -72,6 +72,19 @@ export type Database = {
         },
         "id" | "created_at" | "updated_at" | "description" | "trial_days" | "features" | "sort_order" | "is_active"
       >;
+      products: Table<
+        Timestamps & {
+          id: string;
+          code: string;
+          name: string;
+          description: string | null;
+          price_kes: number;
+          features: Json;
+          sort_order: number;
+          is_active: boolean;
+        },
+        "id" | "created_at" | "updated_at" | "description" | "features" | "sort_order" | "is_active"
+      >;
       subscriptions: Table<
         Timestamps & {
           id: string;
@@ -117,6 +130,7 @@ export type Database = {
           user_id: string;
           subscription_id: string | null;
           plan_id: string | null;
+          product_id: string | null;
           purpose: OrderPurpose;
           amount_kes: number;
           account_ref: string;
@@ -124,8 +138,23 @@ export type Database = {
           status_reason: string | null;
           paid_at: string | null;
         },
-        "id" | "created_at" | "updated_at" | "subscription_id" | "plan_id" | "status" | "status_reason" | "paid_at",
+        | "id"
+        | "created_at"
+        | "updated_at"
+        | "subscription_id"
+        | "plan_id"
+        | "product_id"
+        | "status"
+        | "status_reason"
+        | "paid_at",
         [
+          {
+            foreignKeyName: "orders_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "orders_plan_id_fkey";
             columns: ["plan_id"];

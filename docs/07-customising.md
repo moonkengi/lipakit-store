@@ -22,6 +22,10 @@ values ('team_quarterly', 'Team', 'For small teams.', 4000, 'quarter', 14,
 
 It appears on `/pricing` immediately. Highlight a plan as "Most popular" with `featuredPlanCode` in `src/config/site.ts`.
 
+## Sell something once
+
+Add a row to `products` (see [04 · Billing](04-billing.md#one-time-products)) and check ownership with `hasPurchased(user, "<code>")`.
+
 ## Gate a feature
 
 1. Add a key to the plans that should have it, e.g. `"reports": true` in `plans.features`.

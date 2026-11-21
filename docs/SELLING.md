@@ -14,7 +14,6 @@ The pre-order store is a deployment of LipaKit itself with `PAYMENT_PROVIDER=pay
 
 ## Manual alternative: no store
 
-
 Take payment through a **Paystack Starter Business** account and deliver each sale by hand with `issue.mjs`.
 
 ### One-time setup

@@ -24,9 +24,36 @@ export default function CheckoutPage({ searchParams }: PageProps<"/dashboard/che
 
 async function Checkout({ searchParams }: Pick<PageProps<"/dashboard/checkout">, "searchParams">) {
   const user = await requireUser("/dashboard/checkout");
-  const { plan: planCode, error } = await searchParams;
+  const { plan: planCode, product: productCode, error } = await searchParams;
 
   const supabase = await createClient();
+
+  // One-time product: ?product=<code>
+  if (typeof productCode === "string") {
+    const { data: product } = await supabase
+      .from("products")
+      .select("code, name, description, price_kes")
+      .eq("code", productCode)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (product) {
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle>{product.name}</CardTitle>
+            <CardDescription>{formatKes(product.price_kes)}, one-time payment</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {product.description && <p className="text-sm text-muted-foreground">{product.description}</p>}
+            <MpesaCheckout
+              item={{ kind: "product", code: product.code, name: product.name, priceKes: product.price_kes }}
+              defaultPhone={user.phone}
+            />
+          </CardContent>
+        </Card>
+      );
+    }
+  }
   const { data: plan } =
     typeof planCode === "string"
       ? await supabase
@@ -41,11 +68,11 @@ async function Checkout({ searchParams }: Pick<PageProps<"/dashboard/checkout">,
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Choose a plan first</CardTitle>
+          <CardTitle>Choose what to buy first</CardTitle>
         </CardHeader>
         <CardContent>
           <Button asChild>
-            <Link href="/pricing">See plans</Link>
+            <Link href="/pricing">See pricing</Link>
           </Button>
         </CardContent>
       </Card>
@@ -84,7 +111,7 @@ async function Checkout({ searchParams }: Pick<PageProps<"/dashboard/checkout">,
           </form>
         ) : (
           <MpesaCheckout
-            plan={{ code: plan.code, name: plan.name, priceKes: plan.price_kes }}
+            item={{ kind: "plan", code: plan.code, name: plan.name, priceKes: plan.price_kes }}
             defaultPhone={user.phone}
           />
         )}

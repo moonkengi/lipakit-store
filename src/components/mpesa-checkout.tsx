@@ -17,7 +17,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 type Props = {
-  plan: { code: string; name: string; priceKes: number };
+  /** What's being bought: a subscription plan or a one-time product. */
+  item: { kind: "plan" | "product"; code: string; name: string; priceKes: number };
   /** Pre-filled phone, e.g. from the user's profile (2547XXXXXXXX). */
   defaultPhone?: string | null;
 };
@@ -32,7 +33,7 @@ const POLL_INTERVAL_MS = 4_000;
 /** The server expires a push after 10 minutes; stop watching a little after that. */
 const GIVE_UP_AFTER_MS = 11 * 60_000;
 
-export function MpesaCheckout({ plan, defaultPhone }: Props) {
+export function MpesaCheckout({ item, defaultPhone }: Props) {
   const [state, setState] = useState<State>({ step: "form" });
   const [phone, setPhone] = useState(defaultPhone ? `0${defaultPhone.slice(3)}` : "");
 
@@ -43,7 +44,7 @@ export function MpesaCheckout({ plan, defaultPhone }: Props) {
       const res = await fetch("/api/mpesa/stk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planCode: plan.code, phone }),
+        body: JSON.stringify(item.kind === "plan" ? { planCode: item.code, phone } : { productCode: item.code, phone }),
       });
       const body = (await res.json()) as { orderId?: string; accountRef?: string; error?: string };
       if (!res.ok || !body.orderId || !body.accountRef) {
@@ -88,7 +89,7 @@ export function MpesaCheckout({ plan, defaultPhone }: Props) {
       </div>
       <Button type="submit" className="w-full" disabled={state.step === "sending"}>
         {state.step === "sending" ? <Loader2 className="animate-spin" /> : null}
-        Pay {formatKes(plan.priceKes)} with M-Pesa
+        Pay {formatKes(item.priceKes)} with M-Pesa
       </Button>
       {error && (
         <p className="text-sm text-destructive" role="alert">

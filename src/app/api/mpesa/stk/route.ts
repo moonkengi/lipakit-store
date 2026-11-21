@@ -13,10 +13,11 @@ import { getCurrentUser } from "@/lib/auth";
 import { CheckoutError, startStkCheckout } from "@/lib/payments";
 import { createClient } from "@/lib/supabase/server";
 
-const bodySchema = z.object({
-  planCode: z.string().regex(/^[a-z0-9_]+$/),
-  phone: z.string().min(9).max(20),
-});
+const code = z.string().regex(/^[a-z0-9_]+$/);
+const bodySchema = z.union([
+  z.object({ planCode: code, phone: z.string().min(9).max(20) }),
+  z.object({ productCode: code, phone: z.string().min(9).max(20) }),
+]);
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
@@ -24,34 +25,54 @@ export async function POST(request: Request) {
 
   const parsed = bodySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success)
-    return NextResponse.json({ error: "Choose a plan and enter your phone number." }, { status: 400 });
+    return NextResponse.json({ error: "Choose what to buy and enter your phone number." }, { status: 400 });
 
   const supabase = await createClient();
-  const { data: plan } = await supabase
-    .from("plans")
-    .select("id, price_kes")
-    .eq("code", parsed.data.planCode)
-    .eq("is_active", true)
-    .maybeSingle();
-  if (!plan) return NextResponse.json({ error: "That plan isn't available." }, { status: 404 });
+  let order: Pick<
+    Parameters<typeof startStkCheckout>[0],
+    "amountKes" | "purpose" | "planId" | "productId" | "subscriptionId"
+  >;
 
-  // Already on a live plan? Then this payment renews it (from the current period end).
-  const { data: live } = await supabase
-    .from("subscriptions")
-    .select("id")
-    .eq("user_id", user.id)
-    .in("status", ["trialing", "active", "grace"])
-    .maybeSingle();
+  if ("productCode" in parsed.data) {
+    // One-time product: no subscription involved.
+    const { data: product } = await supabase
+      .from("products")
+      .select("id, price_kes")
+      .eq("code", parsed.data.productCode)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (!product) return NextResponse.json({ error: "That product isn't available." }, { status: 404 });
+    order = { amountKes: product.price_kes, purpose: "one_off", productId: product.id };
+  } else {
+    const { data: plan } = await supabase
+      .from("plans")
+      .select("id, price_kes")
+      .eq("code", parsed.data.planCode)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (!plan) return NextResponse.json({ error: "That plan isn't available." }, { status: 404 });
+
+    // Already on a live plan? Then this payment renews it (from the current period end).
+    const { data: live } = await supabase
+      .from("subscriptions")
+      .select("id")
+      .eq("user_id", user.id)
+      .in("status", ["trialing", "active", "grace"])
+      .maybeSingle();
+    order = {
+      amountKes: plan.price_kes,
+      purpose: live ? "renewal" : "subscription",
+      planId: plan.id,
+      subscriptionId: live?.id,
+    };
+  }
 
   try {
     const result = await startStkCheckout({
       userId: user.id,
       email: user.email,
       phone: parsed.data.phone,
-      amountKes: plan.price_kes,
-      purpose: live ? "renewal" : "subscription",
-      planId: plan.id,
-      subscriptionId: live?.id,
+      ...order,
     });
     // Remember the number for next time (users may edit their own phone; see RLS migration).
     if (user.phone !== result.phone) {

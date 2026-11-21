@@ -47,3 +47,19 @@ export async function getLimit(user: Pick<CurrentUser, "id"> | null, featureKey:
   if (!user) return null;
   return featureLimit((await getEntitlements(user.id)).features, featureKey);
 }
+
+/**
+ * Has the user paid for this one-time product? e.g. hasPurchased(user, "course_basics").
+ * Counts only paid orders, so a payment under review doesn't unlock anything yet.
+ */
+export async function hasPurchased(user: Pick<CurrentUser, "id"> | null, productCode: string): Promise<boolean> {
+  if (!user) return false;
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("orders")
+    .select("id, products!inner(code)", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .eq("status", "paid")
+    .eq("products.code", productCode);
+  return (count ?? 0) > 0;
+}

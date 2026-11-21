@@ -51,6 +51,7 @@ export async function startStkCheckout(input: {
   amountKes: number;
   purpose: OrderPurpose;
   planId?: string;
+  productId?: string;
   subscriptionId?: string;
 }): Promise<StartCheckoutResult> {
   let phone: string;
@@ -86,6 +87,7 @@ export async function startStkCheckout(input: {
         user_id: input.userId,
         purpose: input.purpose,
         plan_id: input.planId ?? null,
+        product_id: input.productId ?? null,
         subscription_id: input.subscriptionId ?? null,
         amount_kes: input.amountKes,
         account_ref: generateAccountRef(),

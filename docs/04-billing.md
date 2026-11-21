@@ -52,6 +52,20 @@ Plans are rows in the `plans` table (see `supabase/seed.sql`):
 
 Upgrades and downgrades take effect when the renewal for the new plan is paid. The customer picks the new plan on `/pricing`, pays, and the subscription switches plan and extends from the current period end. Simple, and nobody is charged a prorated amount they can't verify. To change prices, update `price_kes`: existing subscribers pay the new price at their next renewal.
 
+## One-time products
+
+Not everything is a subscription. Pre-orders, e-books, courses or a setup fee go in the `products` table: `code`, `name`, `description`, `price_kes`, `features` (shown as lines on the pricing page, e.g. `{"Lifetime access": true}`), `sort_order`, `is_active`.
+
+```sql
+insert into public.products (code, name, description, price_kes, features)
+values ('course_basics', 'M-Pesa Basics course', 'Six video lessons.', 2500, '{"Lifetime access": true}');
+```
+
+- Products appear on `/pricing` (alone if you have no plans, or under "One-time purchases").
+- Checkout is `/dashboard/checkout?product=<code>`: the same M-Pesa flow, with `purpose = 'one_off'`.
+- A paid product order gets a numbered receipt with the product's name. It never creates or changes a subscription.
+- Unlock things with `hasPurchased(user, "course_basics")` from `src/lib/billing/access.ts`. Only paid orders count.
+
 ## Receipts
 
 A receipt number (`LK-2026-000123`; prefix from `siteConfig.receiptPrefix`) is issued inside the payment transaction, so numbers are unique and never skipped. The PDF is built afterwards, stored privately in your Supabase Storage (`receipts` bucket), emailed and texted. Each of those steps records its own timestamp and retries for 7 days if it fails. Customers download receipts from the billing page through a 60-second signed link.

@@ -98,7 +98,7 @@ async function Billing() {
                   Paying early never loses days: the new period starts when the current one ends.
                 </p>
                 <MpesaCheckout
-                  plan={{ code: sub.plans.code, name: sub.plans.name, priceKes: sub.plans.price_kes }}
+                  item={{ kind: "plan", code: sub.plans.code, name: sub.plans.name, priceKes: sub.plans.price_kes }}
                   defaultPhone={user.phone}
                 />
                 {openBill && isPaybill && (

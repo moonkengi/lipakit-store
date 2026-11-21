@@ -22,6 +22,8 @@ First release.
 - Reminders, grace period, expiry, cancel at period end. Renewals extend from the old period end.
 - Numbered PDF receipts, stored in Supabase Storage, sent by email and SMS.
 
+- One-time products (pre-orders, e-books, courses, fees) with their own checkout and `hasPurchased()`.
+
 **Admin**
 
 - Overview with revenue, orders, users, unmatched payments, review queue, callback log, payouts, integrations and health checks.
@@ -41,4 +43,4 @@ First release.
 - `supabase/setup.sql` one-paste database setup, `pnpm demo:data`, `pnpm run doctor`.
 - Background jobs on Supabase pg_cron (works on Vercel Hobby).
 
-**Database:** migrations `0001`–`0007`.
+**Database:** migrations `0001`–`0008`.
