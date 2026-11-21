@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense, type ReactNode } from "react";
 import { requireUser } from "@/lib/auth";
+import { IdentifyUser } from "@/lib/analytics/client";
 import { AppShell } from "@/components/app-shell";
 import type { NavItem } from "@/components/nav-links";
 
@@ -24,6 +25,11 @@ export default function DashboardLayout({ children }: LayoutProps<"/dashboard">)
 
 /** Renders children only for a signed-in user; everyone else goes to /login. */
 async function SignedIn({ children }: { children: ReactNode }) {
-  await requireUser();
-  return children;
+  const user = await requireUser();
+  return (
+    <>
+      <IdentifyUser userId={user.id} role={user.role} />
+      {children}
+    </>
+  );
 }

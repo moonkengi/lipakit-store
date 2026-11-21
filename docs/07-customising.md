@@ -51,6 +51,16 @@ Gate in pages, server actions and route handlers, the places that touch data, no
 
 All SMS and email text is in `src/lib/notify/messages.ts`; M-Pesa result messages are in `src/lib/mpesa/result-codes.ts`. Keep SMS under 160 characters to stay within one SMS.
 
+## Analytics (PostHog)
+
+Set `NEXT_PUBLIC_POSTHOG_KEY` (your project API key, `phc_...`) and `NEXT_PUBLIC_POSTHOG_REGION` (`eu` or `us`), then redeploy. You get:
+
+- page views, page leaves and session recordings, with every form input masked
+- signed-in users linked by account ID (no email or phone is sent)
+- server-side events that ad-blockers can't hide: `checkout_started` (item, amount) and `payment_succeeded` (item, amount, receipt number)
+
+Browser traffic goes through `/ingest` on your own domain (rewrites in `next.config.ts`). Add more events with `track(event, userId, props)` from `src/lib/analytics/server.ts`, or `posthog.capture()` in client components. Mention PostHog on your privacy page.
+
 ## Swap a provider
 
 Each external service sits behind a small interface:

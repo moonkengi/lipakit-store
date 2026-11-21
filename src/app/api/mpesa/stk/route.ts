@@ -7,9 +7,10 @@
  *
  * The amount always comes from the database, never from the client.
  */
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
+import { track } from "@/lib/analytics/server";
 import { CheckoutError, startStkCheckout } from "@/lib/payments";
 import { createClient } from "@/lib/supabase/server";
 
@@ -74,6 +75,13 @@ export async function POST(request: Request) {
       phone: parsed.data.phone,
       ...order,
     });
+    after(() =>
+      track("checkout_started", user.id, {
+        purpose: order.purpose,
+        amount_kes: order.amountKes,
+        item: "productCode" in parsed.data ? parsed.data.productCode : parsed.data.planCode,
+      }),
+    );
     // Remember the number for next time (users may edit their own phone; see RLS migration).
     if (user.phone !== result.phone) {
       await supabase.from("profiles").update({ phone: result.phone }).eq("id", user.id);

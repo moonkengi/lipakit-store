@@ -26,6 +26,10 @@ const publicSchema = z.object({
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
   /** Web push (optional): the public half of your VAPID key pair. */
   NEXT_PUBLIC_VAPID_PUBLIC_KEY: optional(),
+  /** PostHog analytics (optional): your project API key (phc_...). Public by design. */
+  NEXT_PUBLIC_POSTHOG_KEY: optional(),
+  /** Your PostHog cloud region: "eu" (default) or "us". */
+  NEXT_PUBLIC_POSTHOG_REGION: z.enum(["eu", "us"]).default("eu"),
 });
 
 export const mpesaModes = ["simulator", "sandbox", "production"] as const;
@@ -232,6 +236,8 @@ export const publicEnv: PublicEnv = parsePublicEnv({
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   NEXT_PUBLIC_VAPID_PUBLIC_KEY: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+  NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
+  NEXT_PUBLIC_POSTHOG_REGION: process.env.NEXT_PUBLIC_POSTHOG_REGION,
 });
 
 let cachedServerEnv: ServerEnv | undefined;

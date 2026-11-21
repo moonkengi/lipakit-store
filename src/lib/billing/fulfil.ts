@@ -9,6 +9,7 @@
  */
 import "server-only";
 import { siteConfig } from "@/config/site";
+import { track } from "@/lib/analytics/server";
 import { maskPhone } from "@/lib/mpesa";
 import { notifyRecipient, getNotifier } from "@/lib/notify";
 import { paymentReceived } from "@/lib/notify/messages";
@@ -76,6 +77,13 @@ export async function ensureReceiptPdf(receipt: ReceiptRow): Promise<string> {
   if (error) throw new Error(`receipt ${receipt.number}: upload failed: ${error.message}`);
   await db.from("receipts").update({ pdf_path: path }).eq("id", receipt.id);
   receipt.pdf_path = path;
+  // Once per paid order, whichever way the money arrived (STK, Paybill, admin).
+  await track("payment_succeeded", ctx.order.user_id, {
+    amount_kes: ctx.order.amount_kes,
+    purpose: ctx.order.purpose,
+    item: ctx.product?.name ?? ctx.plan?.name ?? null,
+    receipt: receipt.number,
+  });
   return path;
 }
 

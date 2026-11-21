@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const posthogRegion = process.env.NEXT_PUBLIC_POSTHOG_REGION === "us" ? "us" : "eu";
+
 // Netlify's Supabase extension provides the anon key as SUPABASE_ANON_KEY.
 // Accept it as NEXT_PUBLIC_SUPABASE_ANON_KEY so it doesn't have to be added twice.
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY;
@@ -8,6 +10,14 @@ const nextConfig: NextConfig = {
   ...(anonKey ? { env: { NEXT_PUBLIC_SUPABASE_ANON_KEY: anonKey } } : {}),
   cacheComponents: true,
   poweredByHeader: false,
+  // PostHog through our own domain (/ingest), so ad-blockers don't drop analytics.
+  skipTrailingSlashRedirect: true,
+  async rewrites() {
+    return [
+      { source: "/ingest/static/:path*", destination: `https://${posthogRegion}-assets.i.posthog.com/static/:path*` },
+      { source: "/ingest/:path*", destination: `https://${posthogRegion}.i.posthog.com/:path*` },
+    ];
+  },
   async headers() {
     return [
       {

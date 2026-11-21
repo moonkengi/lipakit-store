@@ -21,5 +21,5 @@ export async function proxy(request: NextRequest) {
 export const config = {
   // Skip static assets and all API routes. M-Pesa callbacks, cron and webhooks
   // authenticate themselves and must never be redirected to /login.
-  matcher: ["/((?!api/|_next/static|_next/image|favicon.ico|sw.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],
+  matcher: ["/((?!api/|ingest/|_next/static|_next/image|favicon.ico|sw.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],
 };
