@@ -130,7 +130,7 @@ v1 list, re-weighted:
 **M0: Validate (Kent, in parallel with M2; no code)**
 
 - A one-page site with the pitch, a demo video of the simulator scenarios, and pre-orders at a launch price.
-- **Taking payments:** use a manual Paybill/Till with the account number set to the buyer's email, plus a card link. This changes to LipaKit's own checkout as soon as M2 works.
+- **Taking payments:** LipaKit's own store with `PAYMENT_PROVIDER=paystack` (added 2026-11-21, docs/11-paystack.md), since Kent has no Paybill/Till yet. Switch to Daraja when he gets one.
 - Post in Kenyan developer communities and send it directly to 20 agencies.
 - **Go / no-go:** **10+ paid pre-orders within 30 days** → finish M3–M5. Fewer → stop and reassess before more build time (e.g. ship only the open-source core plus Cloud).
 
@@ -205,7 +205,7 @@ Unchanged from v1, plus:
 
 | Thing                                  | Runs on                                                                            | Paid by                              |
 | -------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------ |
-| App, API routes, callbacks             | Buyer's Vercel (Hobby works)                                                       | Buyer                                |
+| App, API routes, callbacks             | Buyer's host (Netlify free allows paid products; Vercel Hobby doesn't)             | Buyer                                |
 | Database, auth, storage, receipts PDFs | Buyer's Supabase                                                                   | Buyer                                |
 | Scheduled jobs (poller, renewals)      | Buyer's Supabase pg_cron                                                           | Buyer (free on all plans)            |
 | Callback relay (M6)                    | Buyer's Supabase Edge Function                                                     | Buyer                                |
@@ -215,7 +215,7 @@ Unchanged from v1, plus:
 | Kit delivery                           | GitHub private repo invites                                                        | Free                                 |
 | Licence keys                           | Signed offline (Ed25519); verified in the kit with a public key, no licence server | Free                                 |
 | Update notices                         | GitHub releases on the delivery repo                                               | Free                                 |
-| Selling the kit                        | Kent's landing page on free tiers + LipaKit's own M-Pesa checkout                  | Kent (near zero)                     |
+| Selling the kit                        | LipaKit store on Netlify free + Paystack (1.5%) until Kent has a Till/Paybill      | Kent (Paystack's fee only)           |
 | Cloud control plane (M6)               | Kent's free tiers until revenue pays for upgrades                                  | Kent, covered by Cloud subscriptions |
 
 ## 17. Decisions made (2026-11-21)

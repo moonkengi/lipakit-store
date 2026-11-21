@@ -2,7 +2,18 @@
 
 This file, `docs/BRIEF.md` and `scripts/release/` are excluded from every buyer copy by `.gitattributes` (export-ignore). Never send them.
 
-## Today: no Paybill or Till yet
+## M0: LipaKit's own store, on Paystack
+
+The pre-order store is a deployment of LipaKit itself with `PAYMENT_PROVIDER=paystack` (docs/11-paystack.md). It proves the kit on real money, and its receipts are your sales records.
+
+1. **Paystack compliance** (you, in the dashboard): finish the 5 forms under Compliance. Until they're approved only test mode works.
+2. **Store repo:** a private copy of the kit (e.g. `moonkengi/lipakit-store`), with LipaKit's real landing copy, the Lite / Solo / Agency pre-order plans, and `PAYMENT_PROVIDER=paystack`.
+3. **Host:** Netlify's free plan allows a paid product (Vercel's free Hobby plan doesn't). Domain: your own domain, or a subdomain while you validate.
+4. **Keys:** paste the Paystack secret key into the host's environment variables yourself, and set the webhook URL in Paystack to `https://<domain>/api/hooks/<MPESA_CALLBACK_TOKEN>/paystack`.
+5. **Each paid pre-order** shows up in `/admin/orders` with a receipt, and you get an alert. At release, run `issue.mjs` for each buyer.
+
+## Manual alternative: no store
+
 
 Take payment through a **Paystack Starter Business** account and deliver each sale by hand with `issue.mjs`.
 
