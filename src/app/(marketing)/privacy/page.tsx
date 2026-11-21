@@ -28,6 +28,10 @@ export default function PrivacyPage() {
           <li>Supabase (database and sign-in)</li>
           <li>Paystack and Safaricom M-Pesa (payments)</li>
           <li>Netlify (hosting)</li>
+          <li>
+            PostHog, EU region (site analytics: pages visited and anonymised session recordings, with everything you
+            type hidden)
+          </li>
           <li>Our email and SMS providers (receipts and messages)</li>
         </ul>
       </section>
