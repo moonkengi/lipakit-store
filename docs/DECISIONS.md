@@ -117,3 +117,40 @@ _Not yet run against a real Supabase project_ (no pg_cron in the build sandbox):
 **`hasAccess()` is not used in `src/proxy.ts`.** Next.js advises against data fetching there; gate pages and routes instead (see the Reports card on the dashboard).
 
 **Daily renewals job** is added to `lipakit_schedule_jobs()` at 03:00 UTC (06:00 Nairobi). Re-run that SQL after applying this migration if you scheduled jobs before.
+
+## M4: Admin, alerts, Telegram, B2C, Health (2026-11-21)
+
+**Notification channels (Kent's choice): Telegram, Slack, Discord, a signed generic webhook, and web push.** WhatsApp was left out.
+
+- **Slack and Discord** carry admin alerts only, through incoming webhooks. Discord messages disable mentions, so an amount or a name can never ping @everyone.
+- **The generic webhook** gets every alert event as JSON, signed `X-LipaKit-Signature: t=…,v1=HMAC-SHA256("t.body")`. `verifyWebhookSignature()` in `src/lib/alerts/webhook.ts` checks the signature and rejects timestamps older than 5 minutes; buyers copy it into the receiving system.
+- **Web push** uses the buyer's own VAPID keys through the `web-push` library, so there's no third-party account. It reaches admins (every alert) and customers (the same messages as SMS and email). Subscriptions the browser revoked (404/410) are deleted on the next send.
+- **No full phone numbers in any alert** (masked as 0712 ••• 678), because chat channels are often seen by more people than payment data should be.
+- **`sendAlert()` never throws,** so a broken channel can't break a payment flow.
+
+**Alerts fire from the payment flow itself:** STK and C2B settlements (paid, needs review), the poller's settlements (through a new `onSettled` hook), every callback processing error (written in `recordProcessing`), unmatched and double payments, and payout results.
+
+**Telegram linking uses a one-time code.** The code is shown once, stored only as a sha256 hash, single-use, and expires after 15 minutes. It's claimed with a guarded update, so two `/start` messages can't both link. A chat can belong to one account. The webhook only accepts requests carrying Telegram's `X-Telegram-Bot-Api-Secret-Token` header. Only private chats can link.
+
+**Admin money actions are audited Postgres functions:** `admin_assign_c2b` (an unmatched payment pays an order and grants access) and `admin_resolve_review` (approve grants access; reject needs a note). Both go through `billing_apply_paid_order()` like any payment and write to `admin_audit_log`. Execute is revoked from `authenticated` (even for admins): the app calls them with the service role after `requireAdmin()`.
+
+**Admin reads use RLS, writes use the service role.** Admin pages read with the user's own client (admin policies allow it). Every server action re-checks `requireAdmin()` itself and never trusts that the page did.
+
+**Callback replay** re-runs the processor on the stored payload. It's safe because every processor is idempotent. `c2b_validate` isn't replayable (a validation answer only matters live). Replays are counted and audited.
+
+**B2C uses Daraja's v3 payment request,** where we set `OriginatorConversationID` to the payout's own ID, so results always match back. Safety rails:
+
+- an idempotency key per form load (a double submit returns the first payout)
+- a daily cap `B2C_DAILY_LIMIT_KES` (default 50,000; a brake, not a Safaricom limit)
+- a required confirmation tick, and an audit entry for every payout
+- an unclear answer (network error or timeout) is marked **timeout (unconfirmed)**, never "failed", because money may have moved; nothing ever resends automatically
+- a late result can still turn a timeout into success or failed
+- `MPESA_B2C_SHORTCODE` exists because the B2C shortcode often differs from the Paybill
+
+**Health checks** live in one place (`src/lib/health.ts`), used by the admin Health page and by `pnpm run doctor` (through `/api/cron/doctor`, protected by `CRON_SECRET`). The rules are pure and unit tested. Scheduled jobs now record every run in `job_runs` (kept 2 days), which is how Health knows the scheduler is firing.
+
+**`pnpm run doctor`, not `pnpm doctor`.** `doctor` is a built-in pnpm command, so `pnpm doctor` runs pnpm's own checks instead of ours. The script is plain Node with no dependencies, so it still works when the app won't start: local env checks first, then the server checks from the running app.
+
+**Sidebar active link streams in.** `usePathname()` can't be part of a pre-rendered shell for dynamic routes like `/admin/orders/[id]`, so the nav renders plain links first and the highlighted version replaces it.
+
+**`web-push` v4 is ES-module-only:** import its named exports (`sendNotification`, `setVapidDetails`), not a default.

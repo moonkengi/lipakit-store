@@ -12,6 +12,7 @@ function fakeMpesa(answer: StkQueryResult | (() => StkQueryResult | Promise<StkQ
     stkPush: vi.fn(),
     registerC2BUrls: vi.fn(),
     createStandingOrder: vi.fn(),
+    b2cPayment: vi.fn(),
     stkQuery: vi.fn(async () => (typeof answer === "function" ? answer() : answer)),
   };
 }

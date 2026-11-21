@@ -57,7 +57,7 @@ Same as v1, plus:
 /src/lib/mpesa/ratiba.ts   standing orders (M3)
 /src/lib/license           licence-key check used by the update channel (M5)
 /src/app/api/hooks/[token]/ratiba   (all Daraja callbacks live under /api/hooks: Safaricom rejects URLs containing "mpesa")
-/scripts/doctor.ts         `pnpm doctor`: checks env, URLs, Daraja reachability, cron, webhook setup
+/scripts/doctor.mjs        `pnpm run doctor`: checks env, URLs, Daraja reachability, cron, webhook setup
 LICENSE.md                 commercial licence (draft in repo; Kent finalises with a lawyer)
 ```
 
@@ -110,7 +110,7 @@ Same as v1, but renewal now has two methods:
 Same as v1, plus:
 
 - User dashboard: renewal method toggle (manual / Ratiba) where enabled.
-- Admin: a "Health" page showing the last callback received per type, poller lag, unmatched count and `pnpm doctor` results. This is the first thing to check when a buyer says "payments are broken" (section 16).
+- Admin: a "Health" page showing the last callback received per type, poller lag, unmatched count and `pnpm run doctor` results. This is the first thing to check when a buyer says "payments are broken" (section 16).
 
 ## 8. Environment variables
 
@@ -123,7 +123,7 @@ v1 list, re-weighted:
 - `03-mpesa-go-live.md` becomes shorter and goes into Daraja 3.0's self-service flow.
 - New `08-failure-modes.md`: each real-world M-Pesa failure (described generically, with no reference to any specific product) and how the kit handles it. This is the content that's hardest to copy.
 - New `09-ratiba.md`: when to use standing orders, costs, approval, fallback behaviour.
-- New `10-support.md`: what's covered, how to file a useful report (`pnpm doctor` output + callback log row).
+- New `10-support.md`: what's covered, how to file a useful report (`pnpm run doctor` output + callback log row).
 
 ## 10. Milestones
 
@@ -140,7 +140,7 @@ v1 list, re-weighted:
 
 **M3: Billing, C2B, receipts, Ratiba**: v1 scope, plus Ratiba (4.8), renewal methods (6) and the fallback when a standing order fails.
 
-**M4: Admin, Telegram, B2C, Health**: v1 scope, plus the Health page and `pnpm doctor`.
+**M4: Admin, Telegram, B2C, Health**: v1 scope, plus the Health page and `pnpm run doctor`.
 
 **M5: Docs, licence, delivery**: v1 scope, plus the failure-modes doc, the final licence, per-buyer delivery and watermarking (14), the update channel (13), and sales running on LipaKit's own checkout.
 
@@ -196,7 +196,7 @@ Unchanged from v1, plus:
 ## 16. Support, liability and maintenance
 
 - **Support scope:** bugs in the kit and setup questions, through GitHub issues on the delivery repo (Agency gets a faster response). Not covered: the buyer's own code changes, Safaricom account and approval issues, or general consulting (offer that as paid go-live help instead).
-- **Self-diagnosis first:** `pnpm doctor`, the admin Health page and the troubleshooting doc should answer most "payments aren't working" questions before they reach Kent.
+- **Self-diagnosis first:** `pnpm run doctor`, the admin Health page and the troubleshooting doc should answer most "payments aren't working" questions before they reach Kent.
 - **Disclaimer:** the licence, README and checkout all say the buyer is responsible for testing and running their own payment system.
 - **Maintenance budget:** a monthly check of the Next.js, Supabase and Daraja changelogs; an `UPGRADING.md` per release; pin major versions. Update-plan revenue pays for this time.
 - **Daraja-change tracking:** subscribe to Safaricom developer announcements; the Cloud change feed shares this work with paying users.

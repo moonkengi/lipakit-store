@@ -2,7 +2,7 @@
 
 A Next.js + Supabase starter kit for M-Pesa-powered SaaS. Daraja done right.
 
-> **Status:** Milestone 3 (billing, C2B, receipts). The full admin panel and docs arrive in later milestones.
+> **Status:** Milestone 4 (admin, alerts, payouts, health). Full docs arrive in Milestone 5.
 
 ## What's inside (so far)
 
@@ -16,6 +16,17 @@ A Next.js + Supabase starter kit for M-Pesa-powered SaaS. Daraja done right.
 - Subscriptions with free trials, renewal reminders, grace and expiry; optional auto-renew with M-Pesa Ratiba standing orders
 - Paybill/Till (C2B) payments matched to orders, with an unmatched queue
 - PDF receipts, plus SMS (Africa's Talking) and email (Resend) notifications on your own accounts
+- **Admin panel:**
+  - revenue (today, month, MRR)
+  - orders and payments search
+  - users and subscriptions
+  - unmatched payments with manual assignment
+  - needs-review decisions
+  - callback log with replay
+  - B2C payouts
+  - integrations
+  - Health checks
+- Alerts to Telegram, Slack, Discord, a signed webhook and web push; customers can link Telegram and turn on browser notifications
 
 ## Quick start
 

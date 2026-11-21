@@ -12,7 +12,8 @@
     "typecheck": "next typegen && tsc --noEmit",
     "format": "prettier --write .",
     "db:types": "supabase gen types typescript --linked --schema public > src/lib/supabase/database.types.ts",
-    "test:sql": "for f in tests/sql/*.sql; do psql \"$DATABASE_URL\" -X -q -v ON_ERROR_STOP=1 -f \"$f\" || exit 1; done"
+    "test:sql": "for f in tests/sql/*.sql; do psql \"$DATABASE_URL\" -X -q -v ON_ERROR_STOP=1 -f \"$f\" || exit 1; done",
+    "doctor": "node scripts/doctor.mjs"
   },
   "dependencies": {
     "@radix-ui/react-label": "^2.1.17",
@@ -29,6 +30,7 @@
     "react-dom": "19.3.0",
     "server-only": "^0.0.1",
     "tailwind-merge": "^3.7.1",
+    "web-push": "^4.0.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
@@ -36,6 +38,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/web-push": "^3.6.4",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
     "prettier": "^3.10.1",
