@@ -136,6 +136,8 @@ export async function fulfilReceipts(opts: { limit?: number } = {}): Promise<{ p
         {
           email: needsEmail ? ctx.profile?.email : null,
           phone: needsSms ? (ctx.profile?.phone ?? ctx.tx?.phone) : null,
+          // Push once, alongside the first email/SMS attempt.
+          userId: needsEmail || needsSms ? ctx.order.user_id : null,
         },
         {
           ...message,

@@ -12,12 +12,22 @@ export type NavItem = {
 };
 
 export function NavLinks({ items }: { items: NavItem[] }) {
-  const pathname = usePathname();
+  return <NavList items={items} pathname={usePathname()} />;
+}
+
+/** Same links without the active highlight: the Suspense fallback while the pathname is unknown. */
+export function NavLinksFallback({ items }: { items: NavItem[] }) {
+  return <NavList items={items} pathname={null} />;
+}
+
+function NavList({ items, pathname }: { items: NavItem[]; pathname: string | null }) {
   return (
     <nav className="flex gap-1 overflow-x-auto px-2 pb-2 md:flex-col md:pb-4">
       {items.map((item) => {
         // Exact match for section roots (/dashboard, /admin), prefix match for children.
-        const active = pathname === item.href || (item.href.split("/").length > 2 && pathname.startsWith(item.href));
+        const active =
+          pathname !== null &&
+          (pathname === item.href || (item.href.split("/").length > 2 && pathname.startsWith(item.href)));
         if (item.disabled) {
           return (
             <span key={item.href} className="cursor-not-allowed rounded-md px-3 py-2 text-sm text-muted-foreground/60">

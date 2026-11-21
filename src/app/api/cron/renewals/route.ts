@@ -7,11 +7,12 @@
 import { NextResponse } from "next/server";
 import { runRenewals } from "@/lib/billing/renewals-runner";
 import { getServerEnv } from "@/lib/env";
+import { recordJobRun } from "@/lib/jobs";
 import { hasBearer } from "@/lib/security";
 
 export const maxDuration = 60;
 
 export async function GET(request: Request) {
   if (!hasBearer(request, getServerEnv().CRON_SECRET)) return new NextResponse(null, { status: 401 });
-  return NextResponse.json(await runRenewals());
+  return NextResponse.json(await recordJobRun("renewals", () => runRenewals()));
 }

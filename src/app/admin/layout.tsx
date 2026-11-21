@@ -6,15 +6,16 @@ import type { NavItem } from "@/components/nav-links";
 
 export const metadata: Metadata = { title: "Admin", robots: { index: false, follow: false } };
 
-// Sections marked disabled are built in Milestone 4.
 const nav: NavItem[] = [
   { href: "/admin", label: "Overview" },
-  { href: "/admin/users", label: "Users & subscriptions", disabled: true },
-  { href: "/admin/orders", label: "Orders & transactions", disabled: true },
-  { href: "/admin/unmatched", label: "Unmatched C2B", disabled: true },
-  { href: "/admin/review", label: "Needs review", disabled: true },
-  { href: "/admin/callbacks", label: "Callback log", disabled: true },
-  { href: "/admin/c2b", label: "Register C2B URLs", disabled: true },
+  { href: "/admin/orders", label: "Orders & payments" },
+  { href: "/admin/users", label: "Users & subscriptions" },
+  { href: "/admin/unmatched", label: "Unmatched payments" },
+  { href: "/admin/review", label: "Needs review" },
+  { href: "/admin/callbacks", label: "Callback log" },
+  { href: "/admin/payouts", label: "Payouts" },
+  { href: "/admin/integrations", label: "Integrations" },
+  { href: "/admin/health", label: "Health" },
 ];
 
 export default function AdminLayout({ children }: LayoutProps<"/admin">) {
@@ -28,8 +29,8 @@ export default function AdminLayout({ children }: LayoutProps<"/admin">) {
 }
 
 /**
- * Gate for every page under /admin: non-admins get a 404. Pages should still
- * call requireAdmin() before using the service-role client.
+ * Gate for every page under /admin: non-admins get a 404. Pages and actions
+ * still call requireAdmin() themselves before using the service-role client.
  */
 async function AdminOnly({ children }: { children: ReactNode }) {
   await requireAdmin();

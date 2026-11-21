@@ -172,6 +172,8 @@ export async function pollPendingStk(deps: {
   mpesa: MpesaClient;
   now?: () => Date;
   limit?: number;
+  /** Called for each push the poller settles (e.g. to send alerts and receipts). Errors are logged, not thrown. */
+  onSettled?: (settlement: Settlement) => Promise<void> | void;
 }): Promise<PollSummary> {
   const now = deps.now?.() ?? new Date();
   const pending = await deps.store.listPendingOlderThan(new Date(now.getTime() - POLL_AFTER_MS), deps.limit ?? 50);
@@ -182,8 +184,14 @@ export async function pollPendingStk(deps: {
     const tooOld = now.getTime() - tx.createdAt.getTime() >= EXPIRE_AFTER_MS;
     try {
       const result = await resolveStk(deps, tx.checkoutRequestId);
-      if (result.kind === "done" && result.outcome === "settled") summary.settled++;
-      else if (result.kind === "still_pending" && tooOld) {
+      if (result.kind === "done" && result.outcome === "settled") {
+        summary.settled++;
+        if (result.settlement && deps.onSettled) {
+          await Promise.resolve(deps.onSettled(result.settlement)).catch((e) =>
+            console.error("[mpesa:poller] onSettled failed", e),
+          );
+        }
+      } else if (result.kind === "still_pending" && tooOld) {
         if ((await deps.store.settle(expirySettlement(tx))) === "settled") summary.expired++;
       } else if (result.kind === "still_pending") summary.stillPending++;
     } catch (error) {

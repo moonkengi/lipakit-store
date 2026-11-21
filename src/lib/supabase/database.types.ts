@@ -37,6 +37,8 @@ export type MpesaKind = "stk" | "c2b" | "b2c" | "ratiba";
 export type MpesaTransactionStatus = "pending" | "success" | "failed" | "cancelled" | "timeout" | "unmatched";
 export type MpesaCallbackKind = "stk" | "c2b_validate" | "c2b_confirm" | "b2c_result" | "b2c_timeout" | "ratiba";
 export type RenewalMethod = "manual" | "ratiba";
+export type PayoutStatus = "pending" | "success" | "failed" | "timeout";
+export type PayoutCommand = "BusinessPayment" | "SalaryPayment" | "PromotionPayment";
 export type RatibaStatus = "requested" | "active" | "failed" | "cancelled";
 
 export type Database = {
@@ -222,6 +224,79 @@ export type Database = {
           },
         ]
       >;
+      admin_audit_log: Table<
+        {
+          id: string;
+          created_at: string;
+          admin_id: string | null;
+          action: string;
+          target_type: string;
+          target_id: string | null;
+          details: Json;
+        },
+        "id" | "created_at" | "admin_id" | "target_id" | "details"
+      >;
+      payouts: Table<
+        Timestamps & {
+          id: string;
+          requested_by: string | null;
+          user_id: string | null;
+          phone: string;
+          amount_kes: number;
+          reason: string;
+          command_id: PayoutCommand;
+          idempotency_key: string;
+          status: PayoutStatus;
+          conversation_id: string | null;
+          originator_conversation_id: string | null;
+          mpesa_receipt: string | null;
+          result_code: number | null;
+          result_desc: string | null;
+          receiver_name: string | null;
+          raw: Json | null;
+        },
+        | "id"
+        | "created_at"
+        | "updated_at"
+        | "requested_by"
+        | "user_id"
+        | "command_id"
+        | "status"
+        | "conversation_id"
+        | "originator_conversation_id"
+        | "mpesa_receipt"
+        | "result_code"
+        | "result_desc"
+        | "receiver_name"
+        | "raw"
+      >;
+      telegram_link_codes: Table<
+        {
+          id: string;
+          created_at: string;
+          user_id: string;
+          code_hash: string;
+          expires_at: string;
+          used_at: string | null;
+        },
+        "id" | "created_at" | "used_at"
+      >;
+      push_subscriptions: Table<
+        {
+          id: string;
+          created_at: string;
+          user_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          user_agent: string | null;
+        },
+        "id" | "created_at" | "user_agent"
+      >;
+      job_runs: Table<
+        { id: string; created_at: string; job: string; ok: boolean; duration_ms: number; summary: Json | null },
+        "id" | "created_at" | "summary"
+      >;
     };
     Views: { [_ in never]: never };
     Functions: {
@@ -258,6 +333,18 @@ export type Database = {
         Returns: string;
       };
       billing_apply_paid_order: { Args: { p_order_id: string; p_receipt_prefix?: string }; Returns: undefined };
+      admin_assign_c2b: {
+        Args: { p_tx_id: string; p_order_id: string; p_admin_id: string; p_receipt_prefix?: string };
+        Returns: string;
+      };
+      admin_resolve_review: {
+        Args: { p_order_id: string; p_approve: boolean; p_admin_id: string; p_note: string; p_receipt_prefix?: string };
+        Returns: string;
+      };
+      admin_revenue_summary: {
+        Args: Record<PropertyKey, never>;
+        Returns: { today_kes: number; month_kes: number; mrr_kes: number; active_subscriptions: number }[];
+      };
     };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };

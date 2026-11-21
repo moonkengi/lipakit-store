@@ -3,7 +3,7 @@ import { Suspense, type ReactNode } from "react";
 import { siteConfig } from "@/config/site";
 import { getCurrentUser } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { NavLinks, type NavItem } from "./nav-links";
+import { NavLinks, NavLinksFallback, type NavItem } from "./nav-links";
 
 /**
  * Shared chrome for the user dashboard and the admin panel: a sidebar of links
@@ -20,7 +20,10 @@ export function AppShell({ area, nav, children }: { area: string; nav: NavItem[]
           </Link>
           <span className="text-xs text-muted-foreground">{area}</span>
         </div>
-        <NavLinks items={nav} />
+        {/* The active link depends on the URL, so it streams in; the plain list renders instantly. */}
+        <Suspense fallback={<NavLinksFallback items={nav} />}>
+          <NavLinks items={nav} />
+        </Suspense>
       </aside>
       <div className="flex flex-1 flex-col">
         <header className="flex h-14 items-center justify-end gap-3 border-b px-4">
