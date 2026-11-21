@@ -204,7 +204,11 @@ function formatIssues(error: z.ZodError): string {
 }
 
 export function parseServerEnv(source: Record<string, string | undefined>): ServerEnv {
-  const result = serverSchema.safeParse(source);
+  // Netlify's Supabase extension names the anon key SUPABASE_ANON_KEY (see next.config.ts).
+  const result = serverSchema.safeParse({
+    ...source,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: source.NEXT_PUBLIC_SUPABASE_ANON_KEY || source.SUPABASE_ANON_KEY,
+  });
   if (!result.success) {
     throw new Error(`Invalid server environment variables:\n${formatIssues(result.error)}`);
   }
