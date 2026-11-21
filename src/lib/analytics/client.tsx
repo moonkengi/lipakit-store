@@ -21,6 +21,9 @@ export function Analytics({ apiKey, region }: Props) {
       capture_pageview: "history_change",
       capture_pageleave: true,
       session_recording: { maskAllInputs: true },
+      // Send plain JSON: some hosts' proxies (e.g. Netlify rewrites) drop the
+      // query string that tells PostHog a body is compressed, and it then rejects it.
+      disable_compression: true,
     });
   }, [apiKey, region]);
   return null;
