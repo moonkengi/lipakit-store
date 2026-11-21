@@ -2,7 +2,7 @@
 
 A Next.js + Supabase starter kit for M-Pesa-powered SaaS. Daraja done right.
 
-> **Status:** Milestone 1 (foundation). M-Pesa, billing, admin tools and the full docs arrive in later milestones.
+> **Status:** Milestone 2 (M-Pesa core). Billing, admin tools and the full docs arrive in later milestones.
 
 ## What's inside (so far)
 
@@ -11,6 +11,8 @@ A Next.js + Supabase starter kit for M-Pesa-powered SaaS. Daraja done right.
 - Sign-in with email magic link and Google (Supabase Auth)
 - Marketing pages, pricing from the database, user dashboard and role-gated admin shell
 - Zod-validated environment variables (`src/lib/env.ts`)
+- M-Pesa STK push checkout with live status, callbacks that are logged first and verified with STK Query, idempotent settlement, and a status poller
+- A local Daraja simulator for every outcome, including the failures Safaricom's sandbox can't produce
 
 ## Quick start
 
@@ -34,6 +36,14 @@ cp .env.example .env.local        # fill in the Supabase values
 4. **Make yourself an admin.** Run the `update public.profiles ...` line at the bottom of `supabase/seed.sql` with your email, then visit `/admin`.
 
 Google sign-in also needs the Google provider turned on in Supabase → Authentication → Providers.
+
+## Paying with the simulator
+
+With `MPESA_MODE=simulator` (the default) you need no Safaricom account.
+
+1. Open http://localhost:3000/dev/simulator and pick an outcome: success, cancelled, timeout, insufficient funds, wrong PIN, duplicate callback, amount mismatch, missing callback, or late callback.
+2. Go to `/pricing`, choose a plan, and pay with any Kenyan-format number (e.g. `0712345678`).
+3. Watch the checkout update by itself. "Missing callback" and "late callback" take just over a minute: that's the status poller doing its job.
 
 ## Scripts
 

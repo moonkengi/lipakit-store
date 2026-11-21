@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "typecheck": "next typegen && tsc --noEmit",
     "format": "prettier --write .",
-    "db:types": "supabase gen types typescript --linked --schema public > src/lib/supabase/database.types.ts"
+    "db:types": "supabase gen types typescript --linked --schema public > src/lib/supabase/database.types.ts",
+    "test:sql": "psql \"$DATABASE_URL\" -X -q -f tests/sql/mpesa_settle_stk.sql"
   },
   "dependencies": {
     "@radix-ui/react-label": "^2.1.17",

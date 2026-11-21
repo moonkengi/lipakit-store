@@ -41,3 +41,35 @@ A running log of choices made while building the kit, newest last. Each entry sa
 **`lib/mpesa` and `lib/reconcile` stay framework-agnostic** (no Next.js, Supabase or React imports), so the core can later ship as a standalone package or be ported to Laravel/Django.
 
 **The repo must be private.** It was briefly public after the first push; see BRIEF section 14.
+
+## M2: M-Pesa core (2026-11-21)
+
+**A callback is a hint; STK Query is the truth, for failures too.** Daraja callbacks are unsigned, so every callback (success or failure) is confirmed with STK Query before anything settles. Verifying failures matters: a forged "cancelled" callback could otherwise close an order the customer then really pays. Callback details (amount, receipt, phone) are used only when they agree with the verified result.
+
+**The decision is in TypeScript; atomic application is in SQL.** `src/lib/reconcile/stk.ts` decides the statuses (pure, unit tested). The `mpesa_settle_stk()` Postgres function applies them under a row lock and only to a `pending` transaction, which is what makes duplicate callbacks, late callbacks and the poller racing each other safe. Execute permission is revoked from `anon` and `authenticated`; without that, any signed-in user could call it through the API and mark their own order paid.
+
+**The switching point to other providers is the `MpesaClient` and `StkStore` interfaces**, not a separate `PaymentProvider` layer (brief v2 §4.0 is updated). A second abstraction with one implementation would be code nobody uses. A Paystack or IntaSend adapter implements `MpesaClient` (`stkPush` / `stkQuery`).
+
+**Result codes:** 1037 (phone unreachable) and 1019 (expired) mark the order `expired`; 1032 marks it `cancelled`; 1, 2001, 1001, 1025, 9999 and unknown codes mark it `failed`. Each has a customer-facing message in `result-codes.ts`. Safaricom publishes no authoritative list; meanings are marked "confirm with Safaricom".
+
+**STK Query "still processing" (`errorCode 500.001.1001`) means pending, not an error.** Commonly observed value; confirm with Safaricom.
+
+**Late callbacks may only fill in a missing receipt.** If the poller settled a success first, a later callback can add the M-Pesa receipt number and nothing else. The receipt isn't re-verified (STK Query doesn't return it); the money trail is already confirmed.
+
+**`needs_review` orders get `paid_at` too.** Money was received; a human decides what to do with it.
+
+**Every checkout attempt is a new order.** Retrying after "cancelled" or "wrong PIN" creates a fresh order with a fresh `account_ref`; stale pending ones expire after 10 minutes. Simpler than reusing an order across several STK pushes.
+
+**Rate limit:** at most 3 pending orders per user in 2 minutes, so an account can't be used to spam payment prompts to someone else's phone.
+
+**Subscription activation is not in M2.** A paid order is the M2 end state; M3 extends `mpesa_settle_stk()` to activate or extend the subscription and create the receipt in the same transaction.
+
+**Buy Goods (Till) support:** `MPESA_TILL_NUMBER` was added for tills whose number (PartyB) differs from the store number (BusinessShortCode).
+
+**Simulator:** state is in memory on `globalThis` (shared across route handlers in one dev server, lost on restart), and it's meant for `pnpm dev` / `pnpm start` on your machine. Env validation refuses `MPESA_MODE=simulator` on a Vercel production deployment. `src/instrumentation.ts` calls the poller every 20 seconds in simulator mode, standing in for Vercel Cron, so "missing callback" scenarios resolve locally.
+
+**`/dev/simulator` outside simulator mode** renders the standard not-found page but with HTTP 200, because with Partial Prerendering the status is sent before the mode check streams in. The real lock is `/api/dev/simulate`, which returns 404 outside simulator mode, so the page has nothing to talk to.
+
+**Per-minute cron needs Vercel Pro.** Vercel Hobby only allows daily cron jobs. Hobby users can point a free external scheduler (e.g. cron-job.org) or Supabase `pg_cron` + `pg_net` at `/api/cron/mpesa-poll` with the `CRON_SECRET` bearer header (documented in M5's deploy guide).
+
+**Database tests** for the settlement function live in `tests/sql/` and run with `pnpm test:sql` against a local Supabase. They run in a transaction that is rolled back.
