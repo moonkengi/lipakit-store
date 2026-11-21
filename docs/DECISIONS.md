@@ -34,13 +34,9 @@ A running log of choices made while building the kit, newest last. Each entry sa
 
 **Typed database client from a hand-written `database.types.ts`.** Matches the migrations exactly so the kit type-checks with no Supabase project. `pnpm db:types` replaces it with CLI-generated types.
 
-## Brief v2 (2026-11-21)
+## Code organisation (2026-11-21)
 
-**The brief moved to `docs/BRIEF.md` (v2) after a stress test of the idea.** Main changes: an optional auto-renew method using M-Pesa Ratiba (standing orders), a payment-provider interface, a simulator covering every failure the sandbox can't produce, a validation milestone (M0) before the build goes further, LipaKit Cloud (hosted callback relay) as the recurring-revenue part, private per-buyer delivery with watermarking, and a draft commercial licence. Section 0 of the brief maps each risk to its fix.
-
-**`lib/mpesa` and `lib/reconcile` stay framework-agnostic** (no Next.js, Supabase or React imports), so the core can later ship as a standalone package or be ported to Laravel/Django.
-
-**The repo must be private.** It was briefly public after the first push; see BRIEF section 14.
+**`lib/mpesa` and `lib/reconcile` stay framework-agnostic** (no Next.js, Supabase or React imports), so the core can be extracted into its own package or ported to another stack.
 
 ## M2: M-Pesa core (2026-11-21)
 
@@ -72,9 +68,9 @@ A running log of choices made while building the kit, newest last. Each entry sa
 
 **Database tests** for the settlement function live in `tests/sql/` and run with `pnpm test:sql` against a local Supabase. They run in a transaction that is rolled back.
 
-## Running on the buyer's resources (2026-11-21)
+## Runs on your own accounts (2026-11-21)
 
-**Principle: the kit runs entirely on the buyer's own accounts** (their Vercel, Supabase, Daraja app, Africa's Talking, Resend, Telegram bot). Nothing in the kit calls a server Kent pays for. Kent's running costs stay close to zero, and buyers' payment data never passes through Kent, so the Data Protection Act exposure is theirs alone.
+**Principle: the kit runs entirely on your own accounts** (their Vercel, Supabase, Daraja app, Africa's Talking, Resend, Telegram bot). Nothing in the kit calls a third-party server you didn't configure, and your customers' payment data never leaves your own infrastructure.
 
 **Scheduled jobs run in the buyer's Supabase (pg_cron + pg_net), not Vercel Cron.** On Vercel Hobby, any cron that runs more than once a day fails the deployment, so M2's per-minute `vercel.json` would have broken every free-plan buyer's deploy; it has been removed. pg_cron is available on every Supabase plan. `public.lipakit_schedule_jobs(app_url, cron_secret)` stores the URL and secret in Supabase Vault and schedules the jobs; `public.lipakit_unschedule_jobs()` removes them. Both are callable only by the database owner (SQL editor), never through the API. Vercel Pro users can still use Vercel Cron, and any other scheduler can call `/api/cron/*` with the bearer secret.
 
@@ -120,7 +116,7 @@ _Not yet run against a real Supabase project_ (no pg_cron in the build sandbox):
 
 ## M4: Admin, alerts, Telegram, B2C, Health (2026-11-21)
 
-**Notification channels (Kent's choice): Telegram, Slack, Discord, a signed generic webhook, and web push.** WhatsApp was left out.
+**Notification channels: Telegram, Slack, Discord, a signed generic webhook, and web push.**
 
 - **Slack and Discord** carry admin alerts only, through incoming webhooks. Discord messages disable mentions, so an amount or a name can never ping @everyone.
 - **The generic webhook** gets every alert event as JSON, signed `X-LipaKit-Signature: t=…,v1=HMAC-SHA256("t.body")`. `verifyWebhookSignature()` in `src/lib/alerts/webhook.ts` checks the signature and rejects timestamps older than 5 minutes; buyers copy it into the receiving system.

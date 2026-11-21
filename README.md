@@ -1,87 +1,90 @@
 # LipaKit
 
-A Next.js + Supabase starter kit for M-Pesa-powered SaaS. Daraja done right.
+A Next.js + Supabase starter kit for SaaS products paid with M-Pesa. STK push, Paybill, subscriptions, receipts, admin and alerts, with the failure cases handled.
 
-> **Status:** Milestone 4 (admin, alerts, payouts, health). Full docs arrive in Milestone 5.
+## Quick start (about 10 minutes)
 
-## What's inside (so far)
+You need Node 20+, pnpm and a free Supabase project. No Safaricom account: you start on the built-in M-Pesa simulator.
 
-- Next.js 16 (App Router, Cache Components), TypeScript strict, Tailwind CSS v4, shadcn/ui
-- Supabase Postgres schema for plans, subscriptions, orders, M-Pesa transactions, callback log and receipts, with Row Level Security
-- Sign-in with email magic link and Google (Supabase Auth)
-- Marketing pages, pricing from the database, user dashboard and role-gated admin shell
-- Zod-validated environment variables (`src/lib/env.ts`)
-- M-Pesa STK push checkout with live status, callbacks that are logged first and verified with STK Query, idempotent settlement, and a status poller
-- A local Daraja simulator for every outcome, including the failures Safaricom's sandbox can't produce
-- Subscriptions with free trials, renewal reminders, grace and expiry; optional auto-renew with M-Pesa Ratiba standing orders
-- Paybill/Till (C2B) payments matched to orders, with an unmatched queue
-- PDF receipts, plus SMS (Africa's Talking) and email (Resend) notifications on your own accounts
-- **Admin panel:**
-  - revenue (today, month, MRR)
-  - orders and payments search
-  - users and subscriptions
-  - unmatched payments with manual assignment
-  - needs-review decisions
-  - callback log with replay
-  - B2C payouts
-  - integrations
-  - Health checks
-- Alerts to Telegram, Slack, Discord, a signed webhook and web push; customers can link Telegram and turn on browser notifications
+1. **Install**
 
-## Quick start
+   ```bash
+   pnpm install
+   cp .env.example .env.local
+   ```
 
-You need Node 20+, pnpm, and a Supabase project (the free tier is fine).
+2. **Database.** In Supabase → SQL Editor, paste all of `supabase/setup.sql` and run it.
 
-```bash
-pnpm install
-cp .env.example .env.local        # fill in the Supabase values
-```
+3. **Env.** In `.env.local`, fill in the three Supabase values (Project Settings → API) and two random secrets:
 
-1. **Database.** In the Supabase SQL editor, run the files in `supabase/migrations/` in order, then `supabase/seed.sql`. Or with the Supabase CLI: `supabase link --project-ref <ref>` then `supabase db push`.
-2. **Auth redirect.** Supabase → Authentication → URL Configuration: set Site URL to `http://localhost:3000` and add `http://localhost:3000/auth/callback` to Redirect URLs.
-3. **Run it.**
+   ```bash
+   openssl rand -hex 24   # → MPESA_CALLBACK_TOKEN
+   openssl rand -hex 24   # → CRON_SECRET
+   ```
+
+   Leave `MPESA_MODE=simulator`.
+
+4. **Auth redirect.** Supabase → Authentication → URL Configuration: Site URL `http://localhost:3000`, and add `http://localhost:3000/auth/callback` to Redirect URLs.
+
+5. **Run**
 
    ```bash
    pnpm dev
    ```
 
-   Open http://localhost:3000, sign in with your email, and you land on an empty dashboard.
+   Sign in at http://localhost:3000 with your email.
 
-4. **Schedule background jobs (when deployed).** Once the app is live on a public https URL, run this once in the Supabase SQL editor with your own URL and `CRON_SECRET`. It uses Supabase's built-in scheduler, which works on every plan, including free:
+6. **Admin + demo data**
 
    ```sql
-   select public.lipakit_schedule_jobs('https://your-app.vercel.app', 'your-CRON_SECRET');
+   update public.profiles set role = 'admin' where email = 'you@example.com';
    ```
 
-   Locally, simulator mode runs the poller for you; no setup needed.
+   ```bash
+   pnpm demo:data      # demo customers, payments, a trial, an overdue plan, review items
+   pnpm run doctor     # checks env, database, scheduler and channels
+   ```
 
-5. **Make yourself an admin.** Run the `update public.profiles ...` line at the bottom of `supabase/seed.sql` with your email, then visit `/admin`.
+   Open `/admin`.
 
-Google sign-in also needs the Google provider turned on in Supabase → Authentication → Providers.
+## Pay with the simulator
 
-## Paying with the simulator
+1. Open `/dev/simulator` and pick an outcome: success, cancelled, timeout, insufficient funds, wrong PIN, duplicate callback, amount mismatch, missing callback or late callback.
+2. Go to `/pricing`, choose a plan, and pay with any Kenyan number (e.g. `0712345678`).
+3. Watch the checkout update by itself. "Missing" and "late callback" take about a minute: that's the status poller at work.
+4. From `/dev/simulator` you can also send a Paybill payment, run the renewals job, and (with `MPESA_RATIBA_ENABLED=true`) run a standing-order payment.
 
-With `MPESA_MODE=simulator` (the default) you need no Safaricom account.
+## What's inside
 
-1. Open http://localhost:3000/dev/simulator and pick an outcome: success, cancelled, timeout, insufficient funds, wrong PIN, duplicate callback, amount mismatch, missing callback, or late callback.
-2. Go to `/pricing`, choose a plan, and pay with any Kenyan-format number (e.g. `0712345678`).
-3. Watch the checkout update by itself. "Missing callback" and "late callback" take just over a minute: that's the status poller doing its job.
-4. Try the rest of billing from `/dev/simulator`:
-   - **Paybill payment:** send a C2B payment with an order's account number (it matches) or any other text (it lands in the unmatched queue).
-   - **Renewals:** "Run renewals job now" sends reminders, moves overdue plans to grace, and expires them.
-   - **Ratiba:** set `MPESA_RATIBA_ENABLED=true`, turn on automatic renewal on `/dashboard/billing`, then "Run payment" on the standing order.
+- **M-Pesa:** STK push confirmed by STK Query, race-safe settlement, status poller, C2B Paybill/Till matching with unmatched and review queues, Ratiba auto-renewal, B2C payouts, callback log with replay, and a simulator for every outcome.
+- **Billing:** plans, trials, reminders, grace, expiry, cancel at period end, feature gating with `hasAccess()`, numbered PDF receipts.
+- **Admin:** revenue, orders, users, unmatched payments, review queue, callbacks, payouts, integrations, health checks.
+- **Notifications:** SMS (Africa's Talking), email (Resend), Telegram and web push for customers; Telegram, Slack, Discord, a signed webhook and web push for admin alerts.
+- **Auth:** email magic link, Google, and phone SMS codes.
+- **Stack:** Next.js 16 (App Router), TypeScript strict, Tailwind v4, shadcn/ui, Supabase (Postgres, Auth, Storage, pg_cron). Everything runs on your own accounts; Vercel Hobby and Supabase Free are enough to launch.
+
+## Docs
+
+Start at [docs/README.md](docs/README.md): setup, sandbox, going live, billing, deploy, troubleshooting, customising, failure modes, Ratiba and support.
 
 ## Scripts
 
-| Command          | What it does                                                     |
-| ---------------- | ---------------------------------------------------------------- |
-| `pnpm dev`       | Run locally                                                      |
-| `pnpm build`     | Production build                                                 |
-| `pnpm test`      | Unit tests (Vitest)                                              |
-| `pnpm lint`      | ESLint                                                           |
-| `pnpm typecheck` | TypeScript, including generated route types                      |
-| `pnpm db:types`  | Regenerate `database.types.ts` from your linked Supabase project |
+| Command                        | What it does                                            |
+| ------------------------------ | ------------------------------------------------------- |
+| `pnpm dev`                     | Run locally                                             |
+| `pnpm build`                   | Production build                                        |
+| `pnpm test`                    | Unit tests (Vitest)                                     |
+| `pnpm test:sql`                | Database function tests (needs `DATABASE_URL`)          |
+| `pnpm lint` / `pnpm typecheck` | ESLint / TypeScript                                     |
+| `pnpm run doctor`              | Check your setup (`--url` for a deployment)             |
+| `pnpm demo:data`               | Load demo data (simulator mode only)                    |
+| `pnpm db:types`                | Regenerate `database.types.ts` from your linked project |
+| `pnpm db:bundle`               | Rebuild `supabase/setup.sql` after changing migrations  |
 
-## Renaming
+## Make it yours
 
-Change `name` in `src/config/site.ts`. See `docs/DECISIONS.md` for why things are built the way they are.
+Change `name` and `description` in `src/config/site.ts`, the colours in `src/app/globals.css`, and the landing page in `src/app/(marketing)/page.tsx`. See [07 · Customising](docs/07-customising.md).
+
+## Licence
+
+Commercial licence; see [LICENSE.md](LICENSE.md). Keep your copy in a private repository.
