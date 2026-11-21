@@ -70,8 +70,8 @@ const faqs = [
 
 export default function HomePage() {
   return (
-    <div className="mx-auto max-w-6xl px-4">
-      <section className="py-20 text-center sm:py-28">
+    <div>
+      <section className="mx-auto max-w-6xl px-4 py-20 text-center sm:py-28">
         <p className="text-sm font-medium text-primary">Pre-order now · Next.js + Supabase</p>
         <h1 className="mx-auto mt-3 max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl">
           M-Pesa payments for your SaaS, done right
@@ -90,20 +90,22 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-3xl pb-20">
-        <h2 className="text-center text-2xl font-semibold tracking-tight">Sending an STK push is the easy part</h2>
-        <p className="mt-3 text-center text-muted-foreground">The hard part is everything after it:</p>
-        <ul className="mt-6 grid gap-3 sm:grid-cols-2">
-          {problems.map((p) => (
-            <li key={p} className="rounded-xl border p-4 text-sm">
-              {p}
-            </li>
-          ))}
-        </ul>
-        <p className="mt-6 text-center text-muted-foreground">{siteConfig.name} handles all of it, out of the box.</p>
+      <section className="bg-cream py-20">
+        <div className="mx-auto max-w-3xl px-4">
+          <h2 className="text-center text-2xl font-semibold tracking-tight">Sending an STK push is the easy part</h2>
+          <p className="mt-3 text-center text-muted-foreground">The hard part is everything after it:</p>
+          <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+            {problems.map((p) => (
+              <li key={p} className="rounded-xl border bg-background p-4 text-sm">
+                {p}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-6 text-center text-muted-foreground">{siteConfig.name} handles all of it, out of the box.</p>
+        </div>
       </section>
 
-      <section className="grid gap-6 pb-20 sm:grid-cols-2 lg:grid-cols-3">
+      <section className="mx-auto grid max-w-6xl gap-6 px-4 py-20 sm:grid-cols-2 lg:grid-cols-3">
         {features.map((f) => (
           <div key={f.title} className="rounded-xl border p-6">
             <f.icon className="size-6 text-primary" aria-hidden />
@@ -113,7 +115,7 @@ export default function HomePage() {
         ))}
       </section>
 
-      <section className="pb-20 text-center">
+      <section className="bg-cream px-4 py-20 text-center">
         <h2 className="text-2xl font-semibold tracking-tight">One-time payment, by M-Pesa</h2>
         <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
           Lite KES 6,400 · Solo KES 12,900 · Agency KES 38,900. Updates after the included period are optional, and the
@@ -124,7 +126,7 @@ export default function HomePage() {
         </Button>
       </section>
 
-      <section id="faq" className="mx-auto max-w-3xl scroll-mt-20 pb-24">
+      <section id="faq" className="mx-auto max-w-3xl scroll-mt-20 px-4 py-20">
         <h2 className="text-center text-2xl font-semibold tracking-tight">Questions</h2>
         <dl className="mt-8 divide-y rounded-xl border">
           {faqs.map((f) => (
