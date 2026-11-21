@@ -1,59 +1,70 @@
 import Link from "next/link";
-import { CalendarClock, ReceiptText, ShieldCheck, Smartphone } from "lucide-react";
+import { Bell, FlaskConical, LayoutDashboard, RefreshCcw, ShieldCheck, Smartphone } from "lucide-react";
 import { siteConfig } from "@/config/site";
 import { Button } from "@/components/ui/button";
 
-/*
- * Landing page template. The copy describes what every M-Pesa SaaS built on
- * this kit offers its customers; replace the product-specific parts (headline,
- * features) with your own. Name and tagline come from src/config/site.ts.
- */
+/* LipaKit store landing page (store branch only; the kit ships a generic template). */
+
+const problems = [
+  "Callbacks that arrive late, twice, or never",
+  "Customers who paid while your app thinks they didn't",
+  "Monthly billing on a network built for one-off payments",
+  "Failures the Daraja sandbox can't even produce",
+];
 
 const features = [
   {
     icon: Smartphone,
-    title: "Pay with M-Pesa in seconds",
-    body: "Enter your number, approve the prompt on your phone, done. No card, no forms.",
+    title: "M-Pesa payments",
+    body: "STK push confirmed with M-Pesa before it counts. Paybill and Till payments matched to orders. Payouts (B2C).",
   },
   {
-    icon: CalendarClock,
-    title: "Renewals on your terms",
-    body: "We remind you before your plan renews. Or turn on automatic renewal with an M-Pesa standing order.",
+    icon: RefreshCcw,
+    title: "Subscriptions",
+    body: "Plans, free trials, reminders by SMS and email, grace periods, automatic renewal with M-Pesa Ratiba, PDF receipts.",
   },
   {
-    icon: ReceiptText,
-    title: "A receipt for every payment",
-    body: "PDF receipts by email and SMS, and your full payment history in your dashboard.",
+    icon: LayoutDashboard,
+    title: "Admin panel",
+    body: "Revenue, orders, customers, unmatched payments, a review queue, the callback log with replay, health checks.",
+  },
+  {
+    icon: FlaskConical,
+    title: "M-Pesa simulator",
+    body: "Every outcome on your laptop: cancelled, wrong PIN, timeout, insufficient funds, duplicate, late and missing callbacks.",
+  },
+  {
+    icon: Bell,
+    title: "Alerts",
+    body: "Hear about failed callbacks and stuck payments on Telegram, Slack, Discord, a signed webhook or web push.",
   },
   {
     icon: ShieldCheck,
-    title: "Payments you can trust",
-    body: "Every payment is confirmed with M-Pesa before it counts, so you're never charged twice or left waiting.",
+    title: "Tested where it matters",
+    body: "Every payment path has a test, and the docs explain the real-world failure behind each one.",
   },
-];
-
-const steps = [
-  { title: "Choose a plan", body: "Start with a free trial where there is one." },
-  { title: "Approve on your phone", body: "An M-Pesa prompt arrives. Enter your PIN." },
-  { title: "You're in", body: "Access starts the moment M-Pesa confirms." },
 ];
 
 const faqs = [
   {
-    q: "Do I need a card?",
-    a: "No. You pay with M-Pesa from your phone. You can also pay from the M-Pesa menu using our Paybill and the account number we send you.",
+    q: "What exactly do I get?",
+    a: "The full source code (Next.js, TypeScript, Supabase), the docs, and your licence. You host it on your own Supabase and hosting accounts. Payments go to your own Paybill or Till, or through Paystack until you have one.",
   },
   {
-    q: "What happens when my plan is due?",
-    a: "We remind you three days before by SMS and email. If you pay early you don't lose any days, because your new period starts when the current one ends.",
+    q: "Is this a pre-order?",
+    a: "Yes. You pay now at the launch price and get version 1.0 by email as a download with your licence. We'll email you the release date within 7 days of your order, and you can cancel for a full refund any time before delivery.",
   },
   {
-    q: "What if I miss a payment?",
-    a: "You keep access for a few days' grace while you pay. After that the plan pauses until you renew.",
+    q: "Do I need a Paybill or Till?",
+    a: "Not to start. You build and test with the built-in simulator and Safaricom's sandbox. To take real money you need your own shortcode, or you can use Paystack in the meantime.",
   },
   {
-    q: "Can I cancel?",
-    a: "Yes, anytime from your billing page. Your plan stays active until the end of the period you paid for.",
+    q: "Does LipaKit handle my customers' money?",
+    a: "No. It's code that runs on your accounts. Payments go straight from your customers to you.",
+  },
+  {
+    q: "What if the kit doesn't work for me?",
+    a: "Report the problem and we'll fix it. If we can't within 14 days, you get a full refund. See the terms.",
   },
 ];
 
@@ -61,43 +72,59 @@ export default function HomePage() {
   return (
     <div className="mx-auto max-w-6xl px-4">
       <section className="py-20 text-center sm:py-28">
-        <p className="text-sm font-medium text-primary">Pay with M-Pesa</p>
-        <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">{siteConfig.name}</h1>
-        <p className="mx-auto mt-4 max-w-xl text-lg text-muted-foreground">{siteConfig.description}</p>
+        <p className="text-sm font-medium text-primary">Pre-order now · Next.js + Supabase</p>
+        <h1 className="mx-auto mt-3 max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl">
+          M-Pesa payments for your SaaS, done right
+        </h1>
+        <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+          {siteConfig.name} is a starter kit for software products that customers pay for with M-Pesa. Checkout,
+          subscriptions, receipts and an admin panel, with every failure case handled.
+        </p>
         <div className="mt-8 flex justify-center gap-3">
           <Button size="lg" asChild>
-            <Link href="/pricing">See plans</Link>
+            <Link href="/pricing">See pricing</Link>
           </Button>
           <Button size="lg" variant="outline" asChild>
-            <Link href="/login">Sign in</Link>
+            <Link href="#faq">Questions</Link>
           </Button>
         </div>
       </section>
 
-      <section className="grid gap-6 pb-20 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="mx-auto max-w-3xl pb-20">
+        <h2 className="text-center text-2xl font-semibold tracking-tight">Sending an STK push is the easy part</h2>
+        <p className="mt-3 text-center text-muted-foreground">The hard part is everything after it:</p>
+        <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+          {problems.map((p) => (
+            <li key={p} className="rounded-xl border p-4 text-sm">
+              {p}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-6 text-center text-muted-foreground">{siteConfig.name} handles all of it, out of the box.</p>
+      </section>
+
+      <section className="grid gap-6 pb-20 sm:grid-cols-2 lg:grid-cols-3">
         {features.map((f) => (
           <div key={f.title} className="rounded-xl border p-6">
             <f.icon className="size-6 text-primary" aria-hidden />
-            <h2 className="mt-4 font-semibold">{f.title}</h2>
+            <h3 className="mt-4 font-semibold">{f.title}</h3>
             <p className="mt-2 text-sm text-muted-foreground">{f.body}</p>
           </div>
         ))}
       </section>
 
-      <section className="pb-20">
-        <h2 className="text-center text-2xl font-semibold tracking-tight">How it works</h2>
-        <ol className="mt-8 grid gap-6 sm:grid-cols-3">
-          {steps.map((s, i) => (
-            <li key={s.title} className="rounded-xl bg-muted/50 p-6">
-              <span className="text-sm font-semibold text-primary">Step {i + 1}</span>
-              <p className="mt-2 font-medium">{s.title}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{s.body}</p>
-            </li>
-          ))}
-        </ol>
+      <section className="pb-20 text-center">
+        <h2 className="text-2xl font-semibold tracking-tight">One-time payment, by M-Pesa</h2>
+        <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
+          Lite KES 6,400 · Solo KES 12,900 · Agency KES 38,900. Updates after the included period are optional, and the
+          code keeps working forever either way.
+        </p>
+        <Button size="lg" className="mt-6" asChild>
+          <Link href="/pricing">Choose your licence</Link>
+        </Button>
       </section>
 
-      <section className="mx-auto max-w-3xl pb-24">
+      <section id="faq" className="mx-auto max-w-3xl scroll-mt-20 pb-24">
         <h2 className="text-center text-2xl font-semibold tracking-tight">Questions</h2>
         <dl className="mt-8 divide-y rounded-xl border">
           {faqs.map((f) => (
@@ -107,11 +134,13 @@ export default function HomePage() {
             </div>
           ))}
         </dl>
-        <div className="mt-10 text-center">
-          <Button size="lg" asChild>
-            <Link href="/pricing">Get started</Link>
-          </Button>
-        </div>
+        <p className="mt-8 text-center text-sm text-muted-foreground">
+          Something else? Email{" "}
+          <a className="underline" href={`mailto:${siteConfig.supportEmail}`}>
+            {siteConfig.supportEmail}
+          </a>
+          .
+        </p>
       </section>
     </div>
   );
