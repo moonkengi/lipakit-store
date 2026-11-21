@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { sendMagicLink, signInWithGoogle, type MagicLinkState } from "./actions";
+import { PhoneLogin } from "./phone-login";
 
 export function LoginForm({ next, initialError }: { next: string; initialError?: string }) {
   const [state, formAction, pending] = useActionState<MagicLinkState, FormData>(sendMagicLink, { status: "idle" });
@@ -52,6 +53,8 @@ export function LoginForm({ next, initialError }: { next: string; initialError?:
           </Button>
         </form>
       )}
+
+      {features.phoneOtp && <PhoneLogin next={next} />}
 
       {error && (
         <p className="text-sm text-destructive" role="alert">

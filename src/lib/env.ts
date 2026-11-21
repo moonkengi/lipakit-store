@@ -91,6 +91,9 @@ export const serverSchema = publicSchema
         : [],
     ),
 
+    /** Phone sign-in: the Send SMS hook secret from Supabase (format v1,whsec_...). */
+    SUPABASE_SMS_HOOK_SECRET: optional(),
+
     // --- Admin alert channels (all optional) ---
     SLACK_WEBHOOK_URL: optional().pipe(z.url().startsWith("https://").optional()),
     DISCORD_WEBHOOK_URL: optional().pipe(z.url().startsWith("https://").optional()),
@@ -110,6 +113,9 @@ export const serverSchema = publicSchema
     // --- Jobs and billing ---
     CRON_SECRET: z.string().min(16, "CRON_SECRET must be at least 16 characters"),
     GRACE_DAYS: z.coerce.number().int().min(0).max(30).default(3),
+
+    /** Your LipaKit licence key (from .lipakit-license). Only displayed on the Health page. */
+    LIPAKIT_LICENSE_KEY: optional(),
 
     // Set by Vercel automatically ("production" | "preview" | "development"). Not something you configure.
     VERCEL_ENV: optional(),
