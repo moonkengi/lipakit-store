@@ -6,7 +6,9 @@
  * bottom so they're unit tested; runHealthChecks() gathers the facts.
  */
 import "server-only";
+import { LICENSE_PUBLIC_KEY_PEM } from "@/config/license";
 import { configuredAlertChannels } from "@/lib/alerts";
+import { verifyLicenseKey } from "@/lib/license";
 import { getServerEnv } from "@/lib/env";
 import { createTokenProvider } from "@/lib/mpesa/auth";
 import { findBannedKeyword } from "@/lib/mpesa/c2b";
@@ -281,5 +283,25 @@ export async function runHealthChecks(now = new Date()): Promise<Check[]> {
     detail: b2cEnabled() ? `On. Daily limit KES ${env.B2C_DAILY_LIMIT_KES.toLocaleString("en-KE")}.` : "Off.",
   });
 
+  checks.push(checkLicense(env.LIPAKIT_LICENSE_KEY, LICENSE_PUBLIC_KEY_PEM, now));
   return checks;
+}
+
+export function checkLicense(key: string | undefined, publicKeyPem: string, now: Date): Check {
+  const base = { id: "license", group: "Licence", label: "LipaKit licence" };
+  if (!key)
+    return {
+      ...base,
+      status: "info",
+      detail: "No LIPAKIT_LICENSE_KEY set (it's in your .lipakit-license file). The app works either way.",
+    };
+  const res = verifyLicenseKey(key, publicKeyPem);
+  if (!res.valid) return { ...base, status: "warn", detail: res.reason };
+  const l = res.license;
+  const covered = new Date(`${l.updatesUntil}T23:59:59Z`) >= now;
+  return {
+    ...base,
+    status: covered ? "ok" : "info",
+    detail: `${l.id}, ${l.tier} tier, ${l.licensee}. Updates ${covered ? "until" : "ended"} ${l.updatesUntil}.`,
+  };
 }
