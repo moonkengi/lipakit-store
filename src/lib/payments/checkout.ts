@@ -14,6 +14,11 @@ import { callbackUrl, getMpesaClient } from "./mpesa-client";
 /** Abuse guard: someone with an account could otherwise spam payment prompts to any phone. */
 const MAX_PENDING_PER_WINDOW = 3;
 const RATE_WINDOW_MS = 2 * 60_000;
+/**
+ * Per phone number, across all accounts: stops someone opening many accounts
+ * to flood a stranger's phone with M-Pesa prompts.
+ */
+const MAX_PUSHES_PER_PHONE_PER_HOUR = 5;
 
 export class CheckoutError extends Error {
   constructor(
@@ -74,6 +79,21 @@ export async function startStkCheckout(input: {
     throw new CheckoutError(
       "rate_limited",
       "You have payments waiting. Complete or cancel them on your phone first.",
+      429,
+    );
+  }
+
+  const hourAgo = new Date(Date.now() - 60 * 60_000).toISOString();
+  const { count: phonePushes } = await db
+    .from("mpesa_transactions")
+    .select("id", { count: "exact", head: true })
+    .eq("kind", "stk")
+    .eq("phone", phone)
+    .gte("created_at", hourAgo);
+  if ((phonePushes ?? 0) >= MAX_PUSHES_PER_PHONE_PER_HOUR) {
+    throw new CheckoutError(
+      "rate_limited",
+      "Too many payment requests to this number in the last hour. Please try again later.",
       429,
     );
   }
