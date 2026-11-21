@@ -78,7 +78,9 @@ function PlanCard({ plan, featured }: { plan: Plan; featured: boolean }) {
       </CardContent>
       <CardFooter>
         <Button className="w-full" variant={featured ? "default" : "outline"} asChild>
-          <Link href={`/login?next=${encodeURIComponent(`/dashboard?plan=${plan.code}`)}`}>Choose {plan.name}</Link>
+          <Link href={`/login?next=${encodeURIComponent(`/dashboard/checkout?plan=${plan.code}`)}`}>
+            Choose {plan.name}
+          </Link>
         </Button>
       </CardFooter>
     </Card>
