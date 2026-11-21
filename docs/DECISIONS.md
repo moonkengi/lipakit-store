@@ -70,6 +70,14 @@ A running log of choices made while building the kit, newest last. Each entry sa
 
 **`/dev/simulator` outside simulator mode** renders the standard not-found page but with HTTP 200, because with Partial Prerendering the status is sent before the mode check streams in. The real lock is `/api/dev/simulate`, which returns 404 outside simulator mode, so the page has nothing to talk to.
 
-**Per-minute cron needs Vercel Pro.** Vercel Hobby only allows daily cron jobs. Hobby users can point a free external scheduler (e.g. cron-job.org) or Supabase `pg_cron` + `pg_net` at `/api/cron/mpesa-poll` with the `CRON_SECRET` bearer header (documented in M5's deploy guide).
-
 **Database tests** for the settlement function live in `tests/sql/` and run with `pnpm test:sql` against a local Supabase. They run in a transaction that is rolled back.
+
+## Running on the buyer's resources (2026-11-21)
+
+**Principle: the kit runs entirely on the buyer's own accounts** (their Vercel, Supabase, Daraja app, Africa's Talking, Resend, Telegram bot). Nothing in the kit calls a server Kent pays for. Kent's running costs stay close to zero, and buyers' payment data never passes through Kent, so the Data Protection Act exposure is theirs alone.
+
+**Scheduled jobs run in the buyer's Supabase (pg_cron + pg_net), not Vercel Cron.** On Vercel Hobby, any cron that runs more than once a day fails the deployment, so M2's per-minute `vercel.json` would have broken every free-plan buyer's deploy; it has been removed. pg_cron is available on every Supabase plan. `public.lipakit_schedule_jobs(app_url, cron_secret)` stores the URL and secret in Supabase Vault and schedules the jobs; `public.lipakit_unschedule_jobs()` removes them. Both are callable only by the database owner (SQL editor), never through the API. Vercel Pro users can still use Vercel Cron, and any other scheduler can call `/api/cron/*` with the bearer secret.
+
+_Not yet run against a real Supabase project_ (no pg_cron in the build sandbox): the SQL follows Supabase's documented `cron.schedule` + `net.http_*` + Vault pattern. Confirm on first setup that `select * from cron.job_run_details order by start_time desc limit 5;` shows successful runs.
+
+**Known exposure:** while a request is queued, pg_net keeps its headers (including `CRON_SECRET`) in `net.http_request_queue`, readable by database roles that can log in. `CRON_SECRET` only allows triggering the cron routes, so the exposure is limited.

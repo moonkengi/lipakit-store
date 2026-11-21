@@ -33,7 +33,15 @@ cp .env.example .env.local        # fill in the Supabase values
 
    Open http://localhost:3000, sign in with your email, and you land on an empty dashboard.
 
-4. **Make yourself an admin.** Run the `update public.profiles ...` line at the bottom of `supabase/seed.sql` with your email, then visit `/admin`.
+4. **Schedule background jobs (when deployed).** Once the app is live on a public https URL, run this once in the Supabase SQL editor with your own URL and `CRON_SECRET`. It uses Supabase's built-in scheduler, which works on every plan, including free:
+
+   ```sql
+   select public.lipakit_schedule_jobs('https://your-app.vercel.app', 'your-CRON_SECRET');
+   ```
+
+   Locally, simulator mode runs the poller for you; no setup needed.
+
+5. **Make yourself an admin.** Run the `update public.profiles ...` line at the bottom of `supabase/seed.sql` with your email, then visit `/admin`.
 
 Google sign-in also needs the Google provider turned on in Supabase → Authentication → Providers.
 

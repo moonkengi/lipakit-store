@@ -153,17 +153,18 @@ Unchanged from v1, plus:
 - The repo is private. Never make it public; open-source pieces go in a separate public repo when chosen.
 - Keep `lib/mpesa` and `lib/reconcile` free of framework imports.
 
-## 12. LipaKit Cloud (the moat)
+## 12. LipaKit Cloud (the moat), revised: buyer runs the heavy part
 
-A hosted service the kit can opt into with two env vars. It's useful even without the kit.
+**Principle (Kent, 2026-11-21): buyers already pay for their own infrastructure, so anything that costs money to run happens on their accounts.** Cloud is redesigned around that.
 
-- **Callback relay:** Daraja posts to a stable LipaKit Cloud URL. Cloud logs the callback, answers Safaricom quickly, and forwards a **signed** request to the buyer's app (HMAC signature, retries with backoff, replay). Daraja callbacks are unsigned; this gives buyers verified callbacks and means nothing is lost while their server is down or redeploying.
-- **Monitoring:** alerts (Telegram, email) when callbacks stop, failure rates jump, or the poller falls behind.
-- **Reconciliation:** compare the M-Pesa statement against orders across all of an agency's projects.
-- **Change feed:** Daraja changes, Safaricom IP list updates and result-code changes, pushed to subscribers.
-- **Why it sticks:** the value grows with traffic and history, it can't be copied by copying the repo, and switching away means re-pointing callback URLs in production.
-- **Honest design:** the kit runs fine **without** Cloud (direct mode is the default). Buyers pay for Cloud because it makes their life easier, not because the kit stops working otherwise. Deep lock-in would scare the developers who buy this.
-- **Data protection:** Cloud processes phone numbers and payment data, so it needs a Kenya Data Protection Act review and a data processing agreement before launch. _Confirm with a lawyer._
+- **Relay, self-hosted:** the callback relay ships as a Supabase Edge Function that runs in the **buyer's** Supabase project (the free tier includes generous invocations). Daraja → their Edge Function (logs, answers Safaricom fast, retries forwarding to their app). It stays up when their Vercel app is redeploying or down. Part of the paid kit, not a hosted service.
+- **Cloud is a thin control plane Kent hosts:** it receives only small, payment-data-free heartbeats from each buyer's app (counts and timings: callbacks received, poller lag, failure rate, unmatched count; no phone numbers, names or amounts). From those it gives:
+  - **alerts** (Telegram/email) when callbacks stop, failures spike or the poller falls behind, using the buyer's own Telegram bot or Resend key where possible
+  - **a dashboard** across all of an agency's projects
+  - **the Daraja change feed:** API changes, Safaricom IP list and result-code updates
+- **Why this is better:** Kent's hosting cost per customer is tiny (a few small requests a minute), the data protection burden drops sharply because no payment data reaches Kent, and it scales without Kent paying for buyers' traffic.
+- **Still sticky:** the alerting history, the multi-project view and the change feed are on Kent's side; the kit works fully without Cloud.
+- **Hosting Cloud itself:** free tiers first (Supabase free + Vercel Hobby, with pg_cron for its own jobs); upgrade only when paying subscribers cover it.
 
 ## 13. Pricing and sales (agreed 2026-11-21)
 
@@ -200,6 +201,23 @@ A hosted service the kit can opt into with two env vars. It's useful even withou
 - **Maintenance budget:** a monthly check of the Next.js, Supabase and Daraja changelogs; an `UPGRADING.md` per release; pin major versions. Update-plan revenue pays for this time.
 - **Daraja-change tracking:** subscribe to Safaricom developer announcements; the Cloud change feed shares this work with paying users.
 
+## 16b. Who pays for what
+
+| Thing                                  | Runs on                                                                            | Paid by                              |
+| -------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------ |
+| App, API routes, callbacks             | Buyer's Vercel (Hobby works)                                                       | Buyer                                |
+| Database, auth, storage, receipts PDFs | Buyer's Supabase                                                                   | Buyer                                |
+| Scheduled jobs (poller, renewals)      | Buyer's Supabase pg_cron                                                           | Buyer (free on all plans)            |
+| Callback relay (M6)                    | Buyer's Supabase Edge Function                                                     | Buyer                                |
+| SMS / email / Telegram                 | Buyer's Africa's Talking, Resend, bot                                              | Buyer                                |
+| M-Pesa                                 | Buyer's Daraja app and shortcode                                                   | Buyer                                |
+| Simulator                              | Buyer's laptop                                                                     | Nobody                               |
+| Kit delivery                           | GitHub private repo invites                                                        | Free                                 |
+| Licence keys                           | Signed offline (Ed25519); verified in the kit with a public key, no licence server | Free                                 |
+| Update notices                         | GitHub releases on the delivery repo                                               | Free                                 |
+| Selling the kit                        | Kent's landing page on free tiers + LipaKit's own M-Pesa checkout                  | Kent (near zero)                     |
+| Cloud control plane (M6)               | Kent's free tiers until revenue pays for upgrades                                  | Kent, covered by Cloud subscriptions |
+
 ## 17. Decisions made (2026-11-21)
 
 1. **Pricing:** section 13 accepted, plus a lower **Lite** tier ($49, one project). Lite is a licence difference, not a code fork.
@@ -207,3 +225,4 @@ A hosted service the kit can opt into with two env vars. It's useful even withou
 3. **Cloud:** yes, as M6, after M0 passes.
 4. **M0 bar:** 10 paid pre-orders within 30 days.
 5. **Past products:** never mentioned in the kit, docs or marketing.
+6. **Buyer's resources first:** anything that costs money to run happens on the buyer's own accounts (section 16b). Scheduled jobs use the buyer's Supabase pg_cron, not Vercel Cron.

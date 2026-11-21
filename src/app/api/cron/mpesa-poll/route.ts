@@ -3,8 +3,13 @@
  *
  * Catches "the customer paid but our app never heard": STK pushes still
  * pending after 60 seconds get an STK Query; after 10 minutes with no result
- * they expire. See vercel.json for the schedule and docs/05-deploy.md for
- * alternatives (Vercel Hobby only allows daily cron jobs).
+ * they expire.
+ *
+ * Scheduled from your own Supabase project with pg_cron (any plan):
+ * `select public.lipakit_schedule_jobs(...)`, see
+ * supabase/migrations/20261121000004_scheduled_jobs.sql. Locally,
+ * src/instrumentation.ts calls it every 20s in simulator mode. Any other
+ * scheduler works too: send GET with `Authorization: Bearer <CRON_SECRET>`.
  */
 import { NextResponse } from "next/server";
 import { getServerEnv } from "@/lib/env";
