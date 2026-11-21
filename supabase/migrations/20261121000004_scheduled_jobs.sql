@@ -59,7 +59,7 @@ begin
   );
   return next 'lipakit-mpesa-poll';
 
-  -- Milestone 3 adds the daily renewals job here.
+  -- A later migration (billing) adds the daily renewals job here.
 end;
 $$;
 
